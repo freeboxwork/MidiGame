@@ -1,0 +1,2226 @@
+{
+  "version": 2,
+  "meta": {
+    "title": "neon_velocity_edm",
+    "sourceFile": "neon_velocity_edm.mid",
+    "sourceTrack": "EDM Lead",
+    "sourceTrackIndex": 4,
+    "sourceNoteCount": 221,
+    "bpm": 150,
+    "duration": 66.768,
+    "sourceDuration": 76.768,
+    "audioStart": 10,
+    "difficulty": "STANDARD",
+    "laneCount": 4,
+    "keys": [
+      "D",
+      "F",
+      "J",
+      "K"
+    ],
+    "holdThreshold": 0.5,
+    "holdNoteCount": 13
+  },
+  "notes": [
+    {
+      "id": "n0001",
+      "time": 2,
+      "duration": 0.1683,
+      "type": "tap",
+      "lane": 1,
+      "pitch": 73,
+      "velocity": 0.614,
+      "endTime": 2.1683
+    },
+    {
+      "id": "n0002",
+      "time": 2.2,
+      "duration": 0.1683,
+      "type": "tap",
+      "lane": 2,
+      "pitch": 76,
+      "velocity": 0.661,
+      "endTime": 2.3683
+    },
+    {
+      "id": "n0003",
+      "time": 2.4,
+      "duration": 0.1683,
+      "type": "tap",
+      "lane": 2,
+      "pitch": 78,
+      "velocity": 0.709,
+      "endTime": 2.5683
+    },
+    {
+      "id": "n0004",
+      "time": 2.6,
+      "duration": 0.1683,
+      "type": "tap",
+      "lane": 2,
+      "pitch": 81,
+      "velocity": 0.756,
+      "endTime": 2.7683
+    },
+    {
+      "id": "n0005",
+      "time": 2.8,
+      "duration": 0.2883,
+      "type": "tap",
+      "lane": 2,
+      "pitch": 78,
+      "velocity": 0.772,
+      "endTime": 3.0883
+    },
+    {
+      "id": "n0006",
+      "time": 3.2,
+      "duration": 0.1683,
+      "type": "tap",
+      "lane": 1,
+      "pitch": 73,
+      "velocity": 0.685,
+      "endTime": 3.3683
+    },
+    {
+      "id": "n0007",
+      "time": 3.4,
+      "duration": 0.1683,
+      "type": "tap",
+      "lane": 2,
+      "pitch": 76,
+      "velocity": 0.717,
+      "endTime": 3.5683
+    },
+    {
+      "id": "n0008",
+      "time": 3.6,
+      "duration": 0.2883,
+      "type": "tap",
+      "lane": 2,
+      "pitch": 78,
+      "velocity": 0.764,
+      "endTime": 3.8883
+    },
+    {
+      "id": "n0009",
+      "time": 4,
+      "duration": 0.2883,
+      "type": "tap",
+      "lane": 2,
+      "pitch": 81,
+      "velocity": 0.795,
+      "endTime": 4.2883
+    },
+    {
+      "id": "n0010",
+      "time": 4.4,
+      "duration": 0.1683,
+      "type": "tap",
+      "lane": 2,
+      "pitch": 81,
+      "velocity": 0.787,
+      "endTime": 4.5683
+    },
+    {
+      "id": "n0011",
+      "time": 4.6,
+      "duration": 0.1683,
+      "type": "tap",
+      "lane": 2,
+      "pitch": 78,
+      "velocity": 0.717,
+      "endTime": 4.7683
+    },
+    {
+      "id": "n0012",
+      "time": 4.8,
+      "duration": 0.2883,
+      "type": "tap",
+      "lane": 2,
+      "pitch": 76,
+      "velocity": 0.74,
+      "endTime": 5.0883
+    },
+    {
+      "id": "n0013",
+      "time": 5.2,
+      "duration": 0.2883,
+      "type": "tap",
+      "lane": 1,
+      "pitch": 74,
+      "velocity": 0.732,
+      "endTime": 5.4883
+    },
+    {
+      "id": "n0014",
+      "time": 5.6,
+      "duration": 0.1683,
+      "type": "tap",
+      "lane": 1,
+      "pitch": 73,
+      "velocity": 0.685,
+      "endTime": 5.7683
+    },
+    {
+      "id": "n0015",
+      "time": 5.8,
+      "duration": 0.1683,
+      "type": "tap",
+      "lane": 2,
+      "pitch": 76,
+      "velocity": 0.709,
+      "endTime": 5.9683
+    },
+    {
+      "id": "n0016",
+      "time": 6,
+      "duration": 0.1683,
+      "type": "tap",
+      "lane": 1,
+      "pitch": 73,
+      "velocity": 0.717,
+      "endTime": 6.1683
+    },
+    {
+      "id": "n0017",
+      "time": 6.2,
+      "duration": 0.1683,
+      "type": "tap",
+      "lane": 2,
+      "pitch": 76,
+      "velocity": 0.732,
+      "endTime": 6.3683
+    },
+    {
+      "id": "n0018",
+      "time": 6.4,
+      "duration": 0.2883,
+      "type": "tap",
+      "lane": 2,
+      "pitch": 78,
+      "velocity": 0.764,
+      "endTime": 6.6883
+    },
+    {
+      "id": "n0019",
+      "time": 6.8,
+      "duration": 0.1683,
+      "type": "tap",
+      "lane": 2,
+      "pitch": 76,
+      "velocity": 0.709,
+      "endTime": 6.9683
+    },
+    {
+      "id": "n0020",
+      "time": 7,
+      "duration": 0.1683,
+      "type": "tap",
+      "lane": 1,
+      "pitch": 73,
+      "velocity": 0.669,
+      "endTime": 7.1683
+    },
+    {
+      "id": "n0021",
+      "time": 7.2,
+      "duration": 0.2883,
+      "type": "tap",
+      "lane": 1,
+      "pitch": 71,
+      "velocity": 0.677,
+      "endTime": 7.4883
+    },
+    {
+      "id": "n0022",
+      "time": 7.6,
+      "duration": 0.1683,
+      "type": "tap",
+      "lane": 1,
+      "pitch": 71,
+      "velocity": 0.654,
+      "endTime": 7.7683
+    },
+    {
+      "id": "n0023",
+      "time": 7.8,
+      "duration": 0.1683,
+      "type": "tap",
+      "lane": 2,
+      "pitch": 76,
+      "velocity": 0.701,
+      "endTime": 7.9683
+    },
+    {
+      "id": "n0024",
+      "time": 8,
+      "duration": 0.2883,
+      "type": "tap",
+      "lane": 2,
+      "pitch": 78,
+      "velocity": 0.772,
+      "endTime": 8.2883
+    },
+    {
+      "id": "n0025",
+      "time": 8.4,
+      "duration": 0.2883,
+      "type": "tap",
+      "lane": 2,
+      "pitch": 80,
+      "velocity": 0.803,
+      "endTime": 8.6883
+    },
+    {
+      "id": "n0026",
+      "time": 8.8,
+      "duration": 0.2883,
+      "type": "tap",
+      "lane": 2,
+      "pitch": 76,
+      "velocity": 0.74,
+      "endTime": 9.0883
+    },
+    {
+      "id": "n0027",
+      "time": 9.2,
+      "duration": 0.1683,
+      "type": "tap",
+      "lane": 1,
+      "pitch": 73,
+      "velocity": 0.701,
+      "endTime": 9.3683
+    },
+    {
+      "id": "n0028",
+      "time": 9.4,
+      "duration": 0.1683,
+      "type": "tap",
+      "lane": 2,
+      "pitch": 78,
+      "velocity": 0.756,
+      "endTime": 9.5683
+    },
+    {
+      "id": "n0029",
+      "time": 9.6,
+      "duration": 0.2883,
+      "type": "tap",
+      "lane": 2,
+      "pitch": 81,
+      "velocity": 0.819,
+      "endTime": 9.8883
+    },
+    {
+      "id": "n0030",
+      "time": 10,
+      "duration": 0.1683,
+      "type": "tap",
+      "lane": 3,
+      "pitch": 85,
+      "velocity": 0.843,
+      "endTime": 10.1683
+    },
+    {
+      "id": "n0031",
+      "time": 10.2,
+      "duration": 0.1683,
+      "type": "tap",
+      "lane": 2,
+      "pitch": 83,
+      "velocity": 0.795,
+      "endTime": 10.3683
+    },
+    {
+      "id": "n0032",
+      "time": 10.4,
+      "duration": 0.2883,
+      "type": "tap",
+      "lane": 2,
+      "pitch": 81,
+      "velocity": 0.78,
+      "endTime": 10.6883
+    },
+    {
+      "id": "n0033",
+      "time": 10.8,
+      "duration": 0.2883,
+      "type": "tap",
+      "lane": 2,
+      "pitch": 78,
+      "velocity": 0.764,
+      "endTime": 11.0883
+    },
+    {
+      "id": "n0034",
+      "time": 11.2,
+      "duration": 0.1683,
+      "type": "tap",
+      "lane": 2,
+      "pitch": 81,
+      "velocity": 0.811,
+      "endTime": 11.3683
+    },
+    {
+      "id": "n0035",
+      "time": 11.4,
+      "duration": 0.1683,
+      "type": "tap",
+      "lane": 2,
+      "pitch": 78,
+      "velocity": 0.724,
+      "endTime": 11.5683
+    },
+    {
+      "id": "n0036",
+      "time": 11.6,
+      "duration": 0.2883,
+      "type": "tap",
+      "lane": 2,
+      "pitch": 76,
+      "velocity": 0.724,
+      "endTime": 11.8883
+    },
+    {
+      "id": "n0037",
+      "time": 12,
+      "duration": 0.2883,
+      "type": "tap",
+      "lane": 1,
+      "pitch": 74,
+      "velocity": 0.709,
+      "endTime": 12.2883
+    },
+    {
+      "id": "n0038",
+      "time": 12.4,
+      "duration": 0.1683,
+      "type": "tap",
+      "lane": 2,
+      "pitch": 76,
+      "velocity": 0.724,
+      "endTime": 12.5683
+    },
+    {
+      "id": "n0039",
+      "time": 12.6,
+      "duration": 0.1683,
+      "type": "tap",
+      "lane": 2,
+      "pitch": 78,
+      "velocity": 0.764,
+      "endTime": 12.7683
+    },
+    {
+      "id": "n0040",
+      "time": 12.8,
+      "duration": 0.2883,
+      "type": "tap",
+      "lane": 2,
+      "pitch": 81,
+      "velocity": 0.795,
+      "endTime": 13.0883
+    },
+    {
+      "id": "n0041",
+      "time": 13.2,
+      "duration": 0.2883,
+      "type": "tap",
+      "lane": 3,
+      "pitch": 85,
+      "velocity": 0.835,
+      "endTime": 13.4883
+    },
+    {
+      "id": "n0042",
+      "time": 13.6,
+      "duration": 0.2883,
+      "type": "tap",
+      "lane": 2,
+      "pitch": 83,
+      "velocity": 0.787,
+      "endTime": 13.8883
+    },
+    {
+      "id": "n0043",
+      "time": 14,
+      "duration": 0.1683,
+      "type": "tap",
+      "lane": 2,
+      "pitch": 80,
+      "velocity": 0.748,
+      "endTime": 14.1683
+    },
+    {
+      "id": "n0044",
+      "time": 14.2,
+      "duration": 0.1683,
+      "type": "tap",
+      "lane": 2,
+      "pitch": 76,
+      "velocity": 0.724,
+      "endTime": 14.3683
+    },
+    {
+      "id": "n0045",
+      "time": 14.4,
+      "duration": 0.2883,
+      "type": "tap",
+      "lane": 2,
+      "pitch": 78,
+      "velocity": 0.78,
+      "endTime": 14.6883
+    },
+    {
+      "id": "n0046",
+      "time": 14.8,
+      "duration": 0.1683,
+      "type": "tap",
+      "lane": 2,
+      "pitch": 76,
+      "velocity": 0.701,
+      "endTime": 14.9683
+    },
+    {
+      "id": "n0047",
+      "time": 15,
+      "duration": 0.1683,
+      "type": "tap",
+      "lane": 1,
+      "pitch": 73,
+      "velocity": 0.685,
+      "endTime": 15.1683
+    },
+    {
+      "id": "n0048",
+      "time": 15.2,
+      "duration": 0.1683,
+      "type": "tap",
+      "lane": 2,
+      "pitch": 76,
+      "velocity": 0.709,
+      "endTime": 15.3683
+    },
+    {
+      "id": "n0049",
+      "time": 15.4,
+      "duration": 0.1683,
+      "type": "tap",
+      "lane": 2,
+      "pitch": 78,
+      "velocity": 0.74,
+      "endTime": 15.5683
+    },
+    {
+      "id": "n0050",
+      "time": 15.6,
+      "duration": 0.2883,
+      "type": "tap",
+      "lane": 2,
+      "pitch": 78,
+      "velocity": 0.772,
+      "endTime": 15.8883
+    },
+    {
+      "id": "n0051",
+      "time": 16,
+      "duration": 0.1683,
+      "type": "tap",
+      "lane": 1,
+      "pitch": 73,
+      "velocity": 0.693,
+      "endTime": 16.1683
+    },
+    {
+      "id": "n0052",
+      "time": 16.2,
+      "duration": 0.1683,
+      "type": "tap",
+      "lane": 2,
+      "pitch": 76,
+      "velocity": 0.709,
+      "endTime": 16.3683
+    },
+    {
+      "id": "n0053",
+      "time": 16.4,
+      "duration": 0.2883,
+      "type": "tap",
+      "lane": 2,
+      "pitch": 78,
+      "velocity": 0.78,
+      "endTime": 16.6883
+    },
+    {
+      "id": "n0054",
+      "time": 16.8,
+      "duration": 0.2883,
+      "type": "tap",
+      "lane": 2,
+      "pitch": 81,
+      "velocity": 0.803,
+      "endTime": 17.0883
+    },
+    {
+      "id": "n0055",
+      "time": 17.2,
+      "duration": 0.1683,
+      "type": "tap",
+      "lane": 2,
+      "pitch": 81,
+      "velocity": 0.819,
+      "endTime": 17.3683
+    },
+    {
+      "id": "n0056",
+      "time": 17.4,
+      "duration": 0.1683,
+      "type": "tap",
+      "lane": 2,
+      "pitch": 78,
+      "velocity": 0.724,
+      "endTime": 17.5683
+    },
+    {
+      "id": "n0057",
+      "time": 17.6,
+      "duration": 0.2883,
+      "type": "tap",
+      "lane": 2,
+      "pitch": 76,
+      "velocity": 0.756,
+      "endTime": 17.8883
+    },
+    {
+      "id": "n0058",
+      "time": 18,
+      "duration": 0.2883,
+      "type": "tap",
+      "lane": 1,
+      "pitch": 74,
+      "velocity": 0.724,
+      "endTime": 18.2883
+    },
+    {
+      "id": "n0059",
+      "time": 18.4,
+      "duration": 0.1683,
+      "type": "tap",
+      "lane": 1,
+      "pitch": 73,
+      "velocity": 0.685,
+      "endTime": 18.5683
+    },
+    {
+      "id": "n0060",
+      "time": 18.6,
+      "duration": 0.1683,
+      "type": "tap",
+      "lane": 2,
+      "pitch": 76,
+      "velocity": 0.717,
+      "endTime": 18.7683
+    },
+    {
+      "id": "n0061",
+      "time": 18.8,
+      "duration": 0.1683,
+      "type": "tap",
+      "lane": 1,
+      "pitch": 73,
+      "velocity": 0.701,
+      "endTime": 18.9683
+    },
+    {
+      "id": "n0062",
+      "time": 19,
+      "duration": 0.1683,
+      "type": "tap",
+      "lane": 2,
+      "pitch": 76,
+      "velocity": 0.724,
+      "endTime": 19.1683
+    },
+    {
+      "id": "n0063",
+      "time": 19.2,
+      "duration": 0.2883,
+      "type": "tap",
+      "lane": 2,
+      "pitch": 78,
+      "velocity": 0.748,
+      "endTime": 19.4883
+    },
+    {
+      "id": "n0064",
+      "time": 19.6,
+      "duration": 0.1683,
+      "type": "tap",
+      "lane": 2,
+      "pitch": 76,
+      "velocity": 0.709,
+      "endTime": 19.7683
+    },
+    {
+      "id": "n0065",
+      "time": 19.8,
+      "duration": 0.1683,
+      "type": "tap",
+      "lane": 1,
+      "pitch": 73,
+      "velocity": 0.685,
+      "endTime": 19.9683
+    },
+    {
+      "id": "n0066",
+      "time": 20,
+      "duration": 0.2883,
+      "type": "tap",
+      "lane": 1,
+      "pitch": 71,
+      "velocity": 0.677,
+      "endTime": 20.2883
+    },
+    {
+      "id": "n0067",
+      "time": 20.4,
+      "duration": 0.1683,
+      "type": "tap",
+      "lane": 1,
+      "pitch": 71,
+      "velocity": 0.685,
+      "endTime": 20.5683
+    },
+    {
+      "id": "n0068",
+      "time": 20.6,
+      "duration": 0.1683,
+      "type": "tap",
+      "lane": 2,
+      "pitch": 76,
+      "velocity": 0.701,
+      "endTime": 20.7683
+    },
+    {
+      "id": "n0069",
+      "time": 20.8,
+      "duration": 0.2883,
+      "type": "tap",
+      "lane": 2,
+      "pitch": 78,
+      "velocity": 0.748,
+      "endTime": 21.0883
+    },
+    {
+      "id": "n0070",
+      "time": 21.2,
+      "duration": 0.2883,
+      "type": "tap",
+      "lane": 2,
+      "pitch": 80,
+      "velocity": 0.772,
+      "endTime": 21.4883
+    },
+    {
+      "id": "n0071",
+      "time": 21.6,
+      "duration": 0.2883,
+      "type": "tap",
+      "lane": 2,
+      "pitch": 76,
+      "velocity": 0.724,
+      "endTime": 21.8883
+    },
+    {
+      "id": "n0072",
+      "time": 22,
+      "duration": 0.1683,
+      "type": "tap",
+      "lane": 1,
+      "pitch": 73,
+      "velocity": 0.677,
+      "endTime": 22.1683
+    },
+    {
+      "id": "n0073",
+      "time": 22.2,
+      "duration": 0.1683,
+      "type": "tap",
+      "lane": 2,
+      "pitch": 78,
+      "velocity": 0.756,
+      "endTime": 22.3683
+    },
+    {
+      "id": "n0074",
+      "time": 22.4,
+      "duration": 0.2883,
+      "type": "tap",
+      "lane": 2,
+      "pitch": 81,
+      "velocity": 0.827,
+      "endTime": 22.6883
+    },
+    {
+      "id": "n0075",
+      "time": 22.8,
+      "duration": 0.1683,
+      "type": "tap",
+      "lane": 3,
+      "pitch": 85,
+      "velocity": 0.843,
+      "endTime": 22.9683
+    },
+    {
+      "id": "n0076",
+      "time": 23,
+      "duration": 0.1683,
+      "type": "tap",
+      "lane": 2,
+      "pitch": 83,
+      "velocity": 0.772,
+      "endTime": 23.1683
+    },
+    {
+      "id": "n0077",
+      "time": 23.2,
+      "duration": 0.2883,
+      "type": "tap",
+      "lane": 2,
+      "pitch": 81,
+      "velocity": 0.756,
+      "endTime": 23.4883
+    },
+    {
+      "id": "n0078",
+      "time": 23.6,
+      "duration": 0.2883,
+      "type": "tap",
+      "lane": 2,
+      "pitch": 78,
+      "velocity": 0.772,
+      "endTime": 23.8883
+    },
+    {
+      "id": "n0079",
+      "time": 24,
+      "duration": 0.1683,
+      "type": "tap",
+      "lane": 2,
+      "pitch": 81,
+      "velocity": 0.795,
+      "endTime": 24.1683
+    },
+    {
+      "id": "n0080",
+      "time": 24.2,
+      "duration": 0.1683,
+      "type": "tap",
+      "lane": 2,
+      "pitch": 78,
+      "velocity": 0.748,
+      "endTime": 24.3683
+    },
+    {
+      "id": "n0081",
+      "time": 24.4,
+      "duration": 0.2883,
+      "type": "tap",
+      "lane": 2,
+      "pitch": 76,
+      "velocity": 0.732,
+      "endTime": 24.6883
+    },
+    {
+      "id": "n0082",
+      "time": 24.8,
+      "duration": 0.2883,
+      "type": "tap",
+      "lane": 1,
+      "pitch": 74,
+      "velocity": 0.717,
+      "endTime": 25.0883
+    },
+    {
+      "id": "n0083",
+      "time": 25.2,
+      "duration": 0.1683,
+      "type": "tap",
+      "lane": 2,
+      "pitch": 76,
+      "velocity": 0.701,
+      "endTime": 25.3683
+    },
+    {
+      "id": "n0084",
+      "time": 25.4,
+      "duration": 0.1683,
+      "type": "tap",
+      "lane": 2,
+      "pitch": 78,
+      "velocity": 0.74,
+      "endTime": 25.5683
+    },
+    {
+      "id": "n0085",
+      "time": 25.6,
+      "duration": 0.2883,
+      "type": "tap",
+      "lane": 2,
+      "pitch": 81,
+      "velocity": 0.811,
+      "endTime": 25.8883
+    },
+    {
+      "id": "n0086",
+      "time": 26,
+      "duration": 0.2883,
+      "type": "tap",
+      "lane": 3,
+      "pitch": 85,
+      "velocity": 0.858,
+      "endTime": 26.2883
+    },
+    {
+      "id": "n0087",
+      "time": 26.4,
+      "duration": 0.2883,
+      "type": "tap",
+      "lane": 2,
+      "pitch": 83,
+      "velocity": 0.78,
+      "endTime": 26.6883
+    },
+    {
+      "id": "n0088",
+      "time": 26.8,
+      "duration": 0.1683,
+      "type": "tap",
+      "lane": 2,
+      "pitch": 80,
+      "velocity": 0.764,
+      "endTime": 26.9683
+    },
+    {
+      "id": "n0089",
+      "time": 27,
+      "duration": 0.1683,
+      "type": "tap",
+      "lane": 2,
+      "pitch": 76,
+      "velocity": 0.717,
+      "endTime": 27.1683
+    },
+    {
+      "id": "n0090",
+      "time": 27.2,
+      "duration": 0.2883,
+      "type": "tap",
+      "lane": 2,
+      "pitch": 78,
+      "velocity": 0.756,
+      "endTime": 27.4883
+    },
+    {
+      "id": "n0091",
+      "time": 27.6,
+      "duration": 0.1683,
+      "type": "tap",
+      "lane": 2,
+      "pitch": 76,
+      "velocity": 0.709,
+      "endTime": 27.7683
+    },
+    {
+      "id": "n0092",
+      "time": 27.8,
+      "duration": 0.1683,
+      "type": "tap",
+      "lane": 1,
+      "pitch": 73,
+      "velocity": 0.677,
+      "endTime": 27.9683
+    },
+    {
+      "id": "n0093",
+      "time": 28,
+      "duration": 0.1683,
+      "type": "tap",
+      "lane": 2,
+      "pitch": 76,
+      "velocity": 0.701,
+      "endTime": 28.1683
+    },
+    {
+      "id": "n0094",
+      "time": 28.2,
+      "duration": 0.1683,
+      "type": "tap",
+      "lane": 2,
+      "pitch": 78,
+      "velocity": 0.756,
+      "endTime": 28.3683
+    },
+    {
+      "id": "n0095",
+      "time": 28.4,
+      "duration": 1.5,
+      "type": "hold",
+      "lane": 2,
+      "pitch": 78,
+      "velocity": 0.646,
+      "endTime": 29.9
+    },
+    {
+      "id": "n0096",
+      "time": 30,
+      "duration": 0.7,
+      "type": "hold",
+      "lane": 2,
+      "pitch": 76,
+      "velocity": 0.614,
+      "endTime": 30.7
+    },
+    {
+      "id": "n0097",
+      "time": 30.8,
+      "duration": 0.7,
+      "type": "hold",
+      "lane": 1,
+      "pitch": 74,
+      "velocity": 0.598,
+      "endTime": 31.5
+    },
+    {
+      "id": "n0098",
+      "time": 31.6,
+      "duration": 1.5,
+      "type": "hold",
+      "lane": 1,
+      "pitch": 73,
+      "velocity": 0.63,
+      "endTime": 33.1
+    },
+    {
+      "id": "n0099",
+      "time": 33.2,
+      "duration": 0.7,
+      "type": "hold",
+      "lane": 1,
+      "pitch": 71,
+      "velocity": 0.583,
+      "endTime": 33.9
+    },
+    {
+      "id": "n0100",
+      "time": 34,
+      "duration": 0.7,
+      "type": "hold",
+      "lane": 1,
+      "pitch": 73,
+      "velocity": 0.614,
+      "endTime": 34.7
+    },
+    {
+      "id": "n0101",
+      "time": 34.8,
+      "duration": 0.7,
+      "type": "hold",
+      "lane": 2,
+      "pitch": 78,
+      "velocity": 0.661,
+      "endTime": 35.5
+    },
+    {
+      "id": "n0102",
+      "time": 35.6,
+      "duration": 0.7,
+      "type": "hold",
+      "lane": 2,
+      "pitch": 81,
+      "velocity": 0.693,
+      "endTime": 36.3
+    },
+    {
+      "id": "n0103",
+      "time": 36.4,
+      "duration": 1.5,
+      "type": "hold",
+      "lane": 2,
+      "pitch": 78,
+      "velocity": 0.677,
+      "endTime": 37.9
+    },
+    {
+      "id": "n0104",
+      "time": 38,
+      "duration": 0.7,
+      "type": "hold",
+      "lane": 2,
+      "pitch": 76,
+      "velocity": 0.646,
+      "endTime": 38.7
+    },
+    {
+      "id": "n0105",
+      "time": 38.8,
+      "duration": 0.7,
+      "type": "hold",
+      "lane": 2,
+      "pitch": 78,
+      "velocity": 0.693,
+      "endTime": 39.5
+    },
+    {
+      "id": "n0106",
+      "time": 39.6,
+      "duration": 0.2883,
+      "type": "tap",
+      "lane": 2,
+      "pitch": 80,
+      "velocity": 0.709,
+      "endTime": 39.8883
+    },
+    {
+      "id": "n0107",
+      "time": 40,
+      "duration": 0.2883,
+      "type": "tap",
+      "lane": 2,
+      "pitch": 81,
+      "velocity": 0.74,
+      "endTime": 40.2883
+    },
+    {
+      "id": "n0108",
+      "time": 40.4,
+      "duration": 0.2883,
+      "type": "tap",
+      "lane": 3,
+      "pitch": 85,
+      "velocity": 0.787,
+      "endTime": 40.6883
+    },
+    {
+      "id": "n0109",
+      "time": 40.8,
+      "duration": 0.2883,
+      "type": "tap",
+      "lane": 3,
+      "pitch": 88,
+      "velocity": 0.835,
+      "endTime": 41.0883
+    },
+    {
+      "id": "n0110",
+      "time": 41.2,
+      "duration": 0.2883,
+      "type": "tap",
+      "lane": 0,
+      "pitch": 66,
+      "velocity": 0.583,
+      "endTime": 41.4883
+    },
+    {
+      "id": "n0111",
+      "time": 41.2,
+      "duration": 0.2883,
+      "type": "tap",
+      "lane": 2,
+      "pitch": 78,
+      "velocity": 0.811,
+      "endTime": 41.4883
+    },
+    {
+      "id": "n0112",
+      "time": 41.6,
+      "duration": 0.1683,
+      "type": "tap",
+      "lane": 1,
+      "pitch": 73,
+      "velocity": 0.701,
+      "endTime": 41.7683
+    },
+    {
+      "id": "n0113",
+      "time": 41.8,
+      "duration": 0.1683,
+      "type": "tap",
+      "lane": 2,
+      "pitch": 76,
+      "velocity": 0.74,
+      "endTime": 41.9683
+    },
+    {
+      "id": "n0114",
+      "time": 42,
+      "duration": 0.2883,
+      "type": "tap",
+      "lane": 0,
+      "pitch": 66,
+      "velocity": 0.598,
+      "endTime": 42.2883
+    },
+    {
+      "id": "n0115",
+      "time": 42,
+      "duration": 0.2883,
+      "type": "tap",
+      "lane": 2,
+      "pitch": 78,
+      "velocity": 0.811,
+      "endTime": 42.2883
+    },
+    {
+      "id": "n0116",
+      "time": 42.4,
+      "duration": 0.2883,
+      "type": "tap",
+      "lane": 1,
+      "pitch": 69,
+      "velocity": 0.638,
+      "endTime": 42.6883
+    },
+    {
+      "id": "n0117",
+      "time": 42.4,
+      "duration": 0.2883,
+      "type": "tap",
+      "lane": 2,
+      "pitch": 81,
+      "velocity": 0.858,
+      "endTime": 42.6883
+    },
+    {
+      "id": "n0118",
+      "time": 42.8,
+      "duration": 0.1683,
+      "type": "tap",
+      "lane": 2,
+      "pitch": 81,
+      "velocity": 0.858,
+      "endTime": 42.9683
+    },
+    {
+      "id": "n0119",
+      "time": 43,
+      "duration": 0.1683,
+      "type": "tap",
+      "lane": 2,
+      "pitch": 78,
+      "velocity": 0.764,
+      "endTime": 43.1683
+    },
+    {
+      "id": "n0120",
+      "time": 43.2,
+      "duration": 0.2883,
+      "type": "tap",
+      "lane": 2,
+      "pitch": 76,
+      "velocity": 0.787,
+      "endTime": 43.4883
+    },
+    {
+      "id": "n0121",
+      "time": 43.6,
+      "duration": 0.2883,
+      "type": "tap",
+      "lane": 1,
+      "pitch": 74,
+      "velocity": 0.764,
+      "endTime": 43.8883
+    },
+    {
+      "id": "n0122",
+      "time": 44,
+      "duration": 0.1683,
+      "type": "tap",
+      "lane": 1,
+      "pitch": 73,
+      "velocity": 0.724,
+      "endTime": 44.1683
+    },
+    {
+      "id": "n0123",
+      "time": 44.2,
+      "duration": 0.1683,
+      "type": "tap",
+      "lane": 2,
+      "pitch": 76,
+      "velocity": 0.772,
+      "endTime": 44.3683
+    },
+    {
+      "id": "n0124",
+      "time": 44.4,
+      "duration": 0.1683,
+      "type": "tap",
+      "lane": 1,
+      "pitch": 73,
+      "velocity": 0.724,
+      "endTime": 44.5683
+    },
+    {
+      "id": "n0125",
+      "time": 44.6,
+      "duration": 0.1683,
+      "type": "tap",
+      "lane": 2,
+      "pitch": 76,
+      "velocity": 0.772,
+      "endTime": 44.7683
+    },
+    {
+      "id": "n0126",
+      "time": 44.8,
+      "duration": 0.2883,
+      "type": "tap",
+      "lane": 0,
+      "pitch": 66,
+      "velocity": 0.591,
+      "endTime": 45.0883
+    },
+    {
+      "id": "n0127",
+      "time": 44.8,
+      "duration": 0.2883,
+      "type": "tap",
+      "lane": 2,
+      "pitch": 78,
+      "velocity": 0.803,
+      "endTime": 45.0883
+    },
+    {
+      "id": "n0128",
+      "time": 45.2,
+      "duration": 0.1683,
+      "type": "tap",
+      "lane": 2,
+      "pitch": 76,
+      "velocity": 0.748,
+      "endTime": 45.3683
+    },
+    {
+      "id": "n0129",
+      "time": 45.4,
+      "duration": 0.1683,
+      "type": "tap",
+      "lane": 1,
+      "pitch": 73,
+      "velocity": 0.709,
+      "endTime": 45.5683
+    },
+    {
+      "id": "n0130",
+      "time": 45.6,
+      "duration": 0.2883,
+      "type": "tap",
+      "lane": 0,
+      "pitch": 59,
+      "velocity": 0.488,
+      "endTime": 45.8883
+    },
+    {
+      "id": "n0131",
+      "time": 45.6,
+      "duration": 0.2883,
+      "type": "tap",
+      "lane": 1,
+      "pitch": 71,
+      "velocity": 0.717,
+      "endTime": 45.8883
+    },
+    {
+      "id": "n0132",
+      "time": 46,
+      "duration": 0.1683,
+      "type": "tap",
+      "lane": 1,
+      "pitch": 71,
+      "velocity": 0.724,
+      "endTime": 46.1683
+    },
+    {
+      "id": "n0133",
+      "time": 46.2,
+      "duration": 0.1683,
+      "type": "tap",
+      "lane": 2,
+      "pitch": 76,
+      "velocity": 0.74,
+      "endTime": 46.3683
+    },
+    {
+      "id": "n0134",
+      "time": 46.4,
+      "duration": 0.2883,
+      "type": "tap",
+      "lane": 2,
+      "pitch": 78,
+      "velocity": 0.787,
+      "endTime": 46.6883
+    },
+    {
+      "id": "n0135",
+      "time": 46.8,
+      "duration": 0.2883,
+      "type": "tap",
+      "lane": 2,
+      "pitch": 80,
+      "velocity": 0.811,
+      "endTime": 47.0883
+    },
+    {
+      "id": "n0136",
+      "time": 47.2,
+      "duration": 0.2883,
+      "type": "tap",
+      "lane": 2,
+      "pitch": 76,
+      "velocity": 0.764,
+      "endTime": 47.4883
+    },
+    {
+      "id": "n0137",
+      "time": 47.6,
+      "duration": 0.1683,
+      "type": "tap",
+      "lane": 1,
+      "pitch": 73,
+      "velocity": 0.717,
+      "endTime": 47.7683
+    },
+    {
+      "id": "n0138",
+      "time": 47.8,
+      "duration": 0.1683,
+      "type": "tap",
+      "lane": 2,
+      "pitch": 78,
+      "velocity": 0.795,
+      "endTime": 47.9683
+    },
+    {
+      "id": "n0139",
+      "time": 48,
+      "duration": 0.2883,
+      "type": "tap",
+      "lane": 1,
+      "pitch": 69,
+      "velocity": 0.638,
+      "endTime": 48.2883
+    },
+    {
+      "id": "n0140",
+      "time": 48,
+      "duration": 0.2883,
+      "type": "tap",
+      "lane": 2,
+      "pitch": 81,
+      "velocity": 0.858,
+      "endTime": 48.2883
+    },
+    {
+      "id": "n0141",
+      "time": 48.4,
+      "duration": 0.1683,
+      "type": "tap",
+      "lane": 3,
+      "pitch": 85,
+      "velocity": 0.89,
+      "endTime": 48.5683
+    },
+    {
+      "id": "n0142",
+      "time": 48.6,
+      "duration": 0.1683,
+      "type": "tap",
+      "lane": 2,
+      "pitch": 83,
+      "velocity": 0.835,
+      "endTime": 48.7683
+    },
+    {
+      "id": "n0143",
+      "time": 48.8,
+      "duration": 0.2883,
+      "type": "tap",
+      "lane": 1,
+      "pitch": 69,
+      "velocity": 0.598,
+      "endTime": 49.0883
+    },
+    {
+      "id": "n0144",
+      "time": 48.8,
+      "duration": 0.2883,
+      "type": "tap",
+      "lane": 2,
+      "pitch": 81,
+      "velocity": 0.819,
+      "endTime": 49.0883
+    },
+    {
+      "id": "n0145",
+      "time": 49.2,
+      "duration": 0.2883,
+      "type": "tap",
+      "lane": 2,
+      "pitch": 78,
+      "velocity": 0.78,
+      "endTime": 49.4883
+    },
+    {
+      "id": "n0146",
+      "time": 49.6,
+      "duration": 0.1683,
+      "type": "tap",
+      "lane": 2,
+      "pitch": 81,
+      "velocity": 0.843,
+      "endTime": 49.7683
+    },
+    {
+      "id": "n0147",
+      "time": 49.8,
+      "duration": 0.1683,
+      "type": "tap",
+      "lane": 2,
+      "pitch": 78,
+      "velocity": 0.787,
+      "endTime": 49.9683
+    },
+    {
+      "id": "n0148",
+      "time": 50,
+      "duration": 0.2883,
+      "type": "tap",
+      "lane": 2,
+      "pitch": 76,
+      "velocity": 0.764,
+      "endTime": 50.2883
+    },
+    {
+      "id": "n0149",
+      "time": 50.4,
+      "duration": 0.2883,
+      "type": "tap",
+      "lane": 1,
+      "pitch": 74,
+      "velocity": 0.748,
+      "endTime": 50.6883
+    },
+    {
+      "id": "n0150",
+      "time": 50.8,
+      "duration": 0.1683,
+      "type": "tap",
+      "lane": 2,
+      "pitch": 76,
+      "velocity": 0.74,
+      "endTime": 50.9683
+    },
+    {
+      "id": "n0151",
+      "time": 51,
+      "duration": 0.1683,
+      "type": "tap",
+      "lane": 2,
+      "pitch": 78,
+      "velocity": 0.803,
+      "endTime": 51.1683
+    },
+    {
+      "id": "n0152",
+      "time": 51.2,
+      "duration": 0.2883,
+      "type": "tap",
+      "lane": 1,
+      "pitch": 69,
+      "velocity": 0.63,
+      "endTime": 51.4883
+    },
+    {
+      "id": "n0153",
+      "time": 51.2,
+      "duration": 0.2883,
+      "type": "tap",
+      "lane": 2,
+      "pitch": 81,
+      "velocity": 0.843,
+      "endTime": 51.4883
+    },
+    {
+      "id": "n0154",
+      "time": 51.6,
+      "duration": 0.2883,
+      "type": "tap",
+      "lane": 1,
+      "pitch": 73,
+      "velocity": 0.669,
+      "endTime": 51.8883
+    },
+    {
+      "id": "n0155",
+      "time": 51.6,
+      "duration": 0.2883,
+      "type": "tap",
+      "lane": 3,
+      "pitch": 85,
+      "velocity": 0.874,
+      "endTime": 51.8883
+    },
+    {
+      "id": "n0156",
+      "time": 52,
+      "duration": 0.2883,
+      "type": "tap",
+      "lane": 1,
+      "pitch": 71,
+      "velocity": 0.614,
+      "endTime": 52.2883
+    },
+    {
+      "id": "n0157",
+      "time": 52,
+      "duration": 0.2883,
+      "type": "tap",
+      "lane": 2,
+      "pitch": 83,
+      "velocity": 0.843,
+      "endTime": 52.2883
+    },
+    {
+      "id": "n0158",
+      "time": 52.4,
+      "duration": 0.1683,
+      "type": "tap",
+      "lane": 2,
+      "pitch": 80,
+      "velocity": 0.787,
+      "endTime": 52.5683
+    },
+    {
+      "id": "n0159",
+      "time": 52.6,
+      "duration": 0.1683,
+      "type": "tap",
+      "lane": 2,
+      "pitch": 76,
+      "velocity": 0.74,
+      "endTime": 52.7683
+    },
+    {
+      "id": "n0160",
+      "time": 52.8,
+      "duration": 0.2883,
+      "type": "tap",
+      "lane": 2,
+      "pitch": 78,
+      "velocity": 0.811,
+      "endTime": 53.0883
+    },
+    {
+      "id": "n0161",
+      "time": 53.2,
+      "duration": 0.1683,
+      "type": "tap",
+      "lane": 2,
+      "pitch": 76,
+      "velocity": 0.74,
+      "endTime": 53.3683
+    },
+    {
+      "id": "n0162",
+      "time": 53.4,
+      "duration": 0.1683,
+      "type": "tap",
+      "lane": 1,
+      "pitch": 73,
+      "velocity": 0.701,
+      "endTime": 53.5683
+    },
+    {
+      "id": "n0163",
+      "time": 53.6,
+      "duration": 0.1683,
+      "type": "tap",
+      "lane": 2,
+      "pitch": 76,
+      "velocity": 0.756,
+      "endTime": 53.7683
+    },
+    {
+      "id": "n0164",
+      "time": 53.8,
+      "duration": 0.1683,
+      "type": "tap",
+      "lane": 2,
+      "pitch": 78,
+      "velocity": 0.795,
+      "endTime": 53.9683
+    },
+    {
+      "id": "n0165",
+      "time": 54,
+      "duration": 0.2883,
+      "type": "tap",
+      "lane": 2,
+      "pitch": 78,
+      "velocity": 0.583,
+      "endTime": 54.2883
+    },
+    {
+      "id": "n0166",
+      "time": 54,
+      "duration": 0.2883,
+      "type": "tap",
+      "lane": 3,
+      "pitch": 90,
+      "velocity": 0.78,
+      "endTime": 54.2883
+    },
+    {
+      "id": "n0167",
+      "time": 54.4,
+      "duration": 0.1683,
+      "type": "tap",
+      "lane": 3,
+      "pitch": 85,
+      "velocity": 0.709,
+      "endTime": 54.5683
+    },
+    {
+      "id": "n0168",
+      "time": 54.6,
+      "duration": 0.1683,
+      "type": "tap",
+      "lane": 3,
+      "pitch": 88,
+      "velocity": 0.74,
+      "endTime": 54.7683
+    },
+    {
+      "id": "n0169",
+      "time": 54.8,
+      "duration": 0.2883,
+      "type": "tap",
+      "lane": 2,
+      "pitch": 78,
+      "velocity": 0.598,
+      "endTime": 55.0883
+    },
+    {
+      "id": "n0170",
+      "time": 54.8,
+      "duration": 0.2883,
+      "type": "tap",
+      "lane": 3,
+      "pitch": 90,
+      "velocity": 0.819,
+      "endTime": 55.0883
+    },
+    {
+      "id": "n0171",
+      "time": 55.2,
+      "duration": 0.2883,
+      "type": "tap",
+      "lane": 2,
+      "pitch": 81,
+      "velocity": 0.638,
+      "endTime": 55.4883
+    },
+    {
+      "id": "n0172",
+      "time": 55.2,
+      "duration": 0.2883,
+      "type": "tap",
+      "lane": 3,
+      "pitch": 93,
+      "velocity": 0.835,
+      "endTime": 55.4883
+    },
+    {
+      "id": "n0173",
+      "time": 55.6,
+      "duration": 0.1683,
+      "type": "tap",
+      "lane": 2,
+      "pitch": 81,
+      "velocity": 0.835,
+      "endTime": 55.7683
+    },
+    {
+      "id": "n0174",
+      "time": 55.8,
+      "duration": 0.1683,
+      "type": "tap",
+      "lane": 2,
+      "pitch": 78,
+      "velocity": 0.764,
+      "endTime": 55.9683
+    },
+    {
+      "id": "n0175",
+      "time": 56,
+      "duration": 0.2883,
+      "type": "tap",
+      "lane": 2,
+      "pitch": 76,
+      "velocity": 0.78,
+      "endTime": 56.2883
+    },
+    {
+      "id": "n0176",
+      "time": 56.4,
+      "duration": 0.2883,
+      "type": "tap",
+      "lane": 1,
+      "pitch": 74,
+      "velocity": 0.764,
+      "endTime": 56.6883
+    },
+    {
+      "id": "n0177",
+      "time": 56.8,
+      "duration": 0.1683,
+      "type": "tap",
+      "lane": 1,
+      "pitch": 73,
+      "velocity": 0.709,
+      "endTime": 56.9683
+    },
+    {
+      "id": "n0178",
+      "time": 57,
+      "duration": 0.1683,
+      "type": "tap",
+      "lane": 2,
+      "pitch": 76,
+      "velocity": 0.756,
+      "endTime": 57.1683
+    },
+    {
+      "id": "n0179",
+      "time": 57.2,
+      "duration": 0.1683,
+      "type": "tap",
+      "lane": 1,
+      "pitch": 73,
+      "velocity": 0.756,
+      "endTime": 57.3683
+    },
+    {
+      "id": "n0180",
+      "time": 57.4,
+      "duration": 0.1683,
+      "type": "tap",
+      "lane": 2,
+      "pitch": 76,
+      "velocity": 0.772,
+      "endTime": 57.5683
+    },
+    {
+      "id": "n0181",
+      "time": 57.6,
+      "duration": 0.2883,
+      "type": "tap",
+      "lane": 0,
+      "pitch": 66,
+      "velocity": 0.591,
+      "endTime": 57.8883
+    },
+    {
+      "id": "n0182",
+      "time": 57.6,
+      "duration": 0.2883,
+      "type": "tap",
+      "lane": 2,
+      "pitch": 78,
+      "velocity": 0.795,
+      "endTime": 57.8883
+    },
+    {
+      "id": "n0183",
+      "time": 58,
+      "duration": 0.1683,
+      "type": "tap",
+      "lane": 2,
+      "pitch": 76,
+      "velocity": 0.756,
+      "endTime": 58.1683
+    },
+    {
+      "id": "n0184",
+      "time": 58.2,
+      "duration": 0.1683,
+      "type": "tap",
+      "lane": 1,
+      "pitch": 73,
+      "velocity": 0.717,
+      "endTime": 58.3683
+    },
+    {
+      "id": "n0185",
+      "time": 58.4,
+      "duration": 0.2883,
+      "type": "tap",
+      "lane": 0,
+      "pitch": 59,
+      "velocity": 0.488,
+      "endTime": 58.6883
+    },
+    {
+      "id": "n0186",
+      "time": 58.4,
+      "duration": 0.2883,
+      "type": "tap",
+      "lane": 1,
+      "pitch": 71,
+      "velocity": 0.693,
+      "endTime": 58.6883
+    },
+    {
+      "id": "n0187",
+      "time": 58.8,
+      "duration": 0.1683,
+      "type": "tap",
+      "lane": 1,
+      "pitch": 71,
+      "velocity": 0.724,
+      "endTime": 58.9683
+    },
+    {
+      "id": "n0188",
+      "time": 59,
+      "duration": 0.1683,
+      "type": "tap",
+      "lane": 2,
+      "pitch": 76,
+      "velocity": 0.772,
+      "endTime": 59.1683
+    },
+    {
+      "id": "n0189",
+      "time": 59.2,
+      "duration": 0.2883,
+      "type": "tap",
+      "lane": 2,
+      "pitch": 78,
+      "velocity": 0.795,
+      "endTime": 59.4883
+    },
+    {
+      "id": "n0190",
+      "time": 59.6,
+      "duration": 0.2883,
+      "type": "tap",
+      "lane": 2,
+      "pitch": 80,
+      "velocity": 0.835,
+      "endTime": 59.8883
+    },
+    {
+      "id": "n0191",
+      "time": 60,
+      "duration": 0.2883,
+      "type": "tap",
+      "lane": 2,
+      "pitch": 76,
+      "velocity": 0.764,
+      "endTime": 60.2883
+    },
+    {
+      "id": "n0192",
+      "time": 60.4,
+      "duration": 0.1683,
+      "type": "tap",
+      "lane": 3,
+      "pitch": 85,
+      "velocity": 0.748,
+      "endTime": 60.5683
+    },
+    {
+      "id": "n0193",
+      "time": 60.6,
+      "duration": 0.1683,
+      "type": "tap",
+      "lane": 3,
+      "pitch": 90,
+      "velocity": 0.772,
+      "endTime": 60.7683
+    },
+    {
+      "id": "n0194",
+      "time": 60.8,
+      "duration": 0.2883,
+      "type": "tap",
+      "lane": 2,
+      "pitch": 81,
+      "velocity": 0.638,
+      "endTime": 61.0883
+    },
+    {
+      "id": "n0195",
+      "time": 60.8,
+      "duration": 0.2883,
+      "type": "tap",
+      "lane": 3,
+      "pitch": 93,
+      "velocity": 0.843,
+      "endTime": 61.0883
+    },
+    {
+      "id": "n0196",
+      "time": 61.2,
+      "duration": 0.1683,
+      "type": "tap",
+      "lane": 3,
+      "pitch": 85,
+      "velocity": 0.89,
+      "endTime": 61.3683
+    },
+    {
+      "id": "n0197",
+      "time": 61.4,
+      "duration": 0.1683,
+      "type": "tap",
+      "lane": 2,
+      "pitch": 83,
+      "velocity": 0.811,
+      "endTime": 61.5683
+    },
+    {
+      "id": "n0198",
+      "time": 61.6,
+      "duration": 0.2883,
+      "type": "tap",
+      "lane": 2,
+      "pitch": 81,
+      "velocity": 0.598,
+      "endTime": 61.8883
+    },
+    {
+      "id": "n0199",
+      "time": 61.6,
+      "duration": 0.2883,
+      "type": "tap",
+      "lane": 3,
+      "pitch": 93,
+      "velocity": 0.811,
+      "endTime": 61.8883
+    },
+    {
+      "id": "n0200",
+      "time": 62,
+      "duration": 0.2883,
+      "type": "tap",
+      "lane": 2,
+      "pitch": 78,
+      "velocity": 0.78,
+      "endTime": 62.2883
+    },
+    {
+      "id": "n0201",
+      "time": 62.4,
+      "duration": 0.1683,
+      "type": "tap",
+      "lane": 2,
+      "pitch": 81,
+      "velocity": 0.827,
+      "endTime": 62.5683
+    },
+    {
+      "id": "n0202",
+      "time": 62.6,
+      "duration": 0.1683,
+      "type": "tap",
+      "lane": 2,
+      "pitch": 78,
+      "velocity": 0.78,
+      "endTime": 62.7683
+    },
+    {
+      "id": "n0203",
+      "time": 62.8,
+      "duration": 0.2883,
+      "type": "tap",
+      "lane": 2,
+      "pitch": 76,
+      "velocity": 0.756,
+      "endTime": 63.0883
+    },
+    {
+      "id": "n0204",
+      "time": 63.2,
+      "duration": 0.2883,
+      "type": "tap",
+      "lane": 1,
+      "pitch": 74,
+      "velocity": 0.748,
+      "endTime": 63.4883
+    },
+    {
+      "id": "n0205",
+      "time": 63.6,
+      "duration": 0.1683,
+      "type": "tap",
+      "lane": 2,
+      "pitch": 76,
+      "velocity": 0.764,
+      "endTime": 63.7683
+    },
+    {
+      "id": "n0206",
+      "time": 63.8,
+      "duration": 0.1683,
+      "type": "tap",
+      "lane": 2,
+      "pitch": 78,
+      "velocity": 0.803,
+      "endTime": 63.9683
+    },
+    {
+      "id": "n0207",
+      "time": 64,
+      "duration": 0.2883,
+      "type": "tap",
+      "lane": 1,
+      "pitch": 69,
+      "velocity": 0.63,
+      "endTime": 64.2883
+    },
+    {
+      "id": "n0208",
+      "time": 64,
+      "duration": 0.2883,
+      "type": "tap",
+      "lane": 2,
+      "pitch": 81,
+      "velocity": 0.858,
+      "endTime": 64.2883
+    },
+    {
+      "id": "n0209",
+      "time": 64.4,
+      "duration": 0.2883,
+      "type": "tap",
+      "lane": 1,
+      "pitch": 73,
+      "velocity": 0.669,
+      "endTime": 64.6883
+    },
+    {
+      "id": "n0210",
+      "time": 64.4,
+      "duration": 0.2883,
+      "type": "tap",
+      "lane": 3,
+      "pitch": 85,
+      "velocity": 0.898,
+      "endTime": 64.6883
+    },
+    {
+      "id": "n0211",
+      "time": 64.8,
+      "duration": 0.2883,
+      "type": "tap",
+      "lane": 1,
+      "pitch": 71,
+      "velocity": 0.614,
+      "endTime": 65.0883
+    },
+    {
+      "id": "n0212",
+      "time": 64.8,
+      "duration": 0.2883,
+      "type": "tap",
+      "lane": 2,
+      "pitch": 83,
+      "velocity": 0.843,
+      "endTime": 65.0883
+    },
+    {
+      "id": "n0213",
+      "time": 65.2,
+      "duration": 0.6883,
+      "type": "hold",
+      "lane": 2,
+      "pitch": 78,
+      "velocity": 0.882,
+      "endTime": 65.8883
+    },
+    {
+      "id": "n0214",
+      "time": 65.2,
+      "duration": 0.1683,
+      "type": "tap",
+      "lane": 1,
+      "pitch": 80,
+      "velocity": 0.795,
+      "endTime": 65.3683
+    },
+    {
+      "id": "n0215",
+      "time": 65.4,
+      "duration": 0.1683,
+      "type": "tap",
+      "lane": 2,
+      "pitch": 76,
+      "velocity": 0.74,
+      "endTime": 65.5683
+    },
+    {
+      "id": "n0216",
+      "time": 65.6,
+      "duration": 1.1517,
+      "type": "hold",
+      "lane": 2,
+      "pitch": 78,
+      "velocity": 0.803,
+      "endTime": 66.7517
+    },
+    {
+      "id": "n0217",
+      "time": 66,
+      "duration": 0.1683,
+      "type": "tap",
+      "lane": 2,
+      "pitch": 76,
+      "velocity": 0.756,
+      "endTime": 66.1683
+    },
+    {
+      "id": "n0218",
+      "time": 66.2,
+      "duration": 0.1683,
+      "type": "tap",
+      "lane": 1,
+      "pitch": 73,
+      "velocity": 0.724,
+      "endTime": 66.3683
+    },
+    {
+      "id": "n0219",
+      "time": 66.4,
+      "duration": 0.1683,
+      "type": "tap",
+      "lane": 2,
+      "pitch": 76,
+      "velocity": 0.74,
+      "endTime": 66.5683
+    },
+    {
+      "id": "n0220",
+      "time": 66.6,
+      "duration": 0.1683,
+      "type": "tap",
+      "lane": 2,
+      "pitch": 78,
+      "velocity": 0.811,
+      "endTime": 66.7683
+    }
+  ]
+}

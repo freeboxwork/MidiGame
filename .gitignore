@@ -1,0 +1,17 @@
+node_modules/
+dist/
+artifacts/
+output/
+
+scripts/__pycache__/
+*.py[cod]
+
+.env
+.env.*
+!.env.example
+*.log
+.DS_Store
+Thumbs.db
+
+# public/audio에 게임용 원본이 있으므로 루트의 중복 파일만 제외합니다.
+/시_분.mp3

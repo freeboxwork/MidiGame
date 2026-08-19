@@ -1,0 +1,229 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta
+      name="description"
+      content="MIDI와 MP3를 플레이 가능한 노트 데이터로 바꾸고 즉시 연주하는 Three.js 리듬게임"
+    />
+    <meta name="theme-color" content="#070b22" />
+    <meta property="og:locale" content="ko_KR" />
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="Neon Velocity" />
+    <meta property="og:title" content="Neon Velocity · Audio Reactive Rhythm Game" />
+    <meta
+      property="og:description"
+      content="음악을 4레인 채보로 바꾸고 네온 크리스털 터널에서 리듬을 플레이하세요."
+    />
+    <meta property="og:image" content="/images/neon-velocity-share-v1.png" />
+    <meta property="og:image:type" content="image/png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content="네온 크리스털 터널과 4레인 노트 위의 Neon Velocity 로고" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="Neon Velocity · Audio Reactive Rhythm Game" />
+    <meta
+      name="twitter:description"
+      content="음악을 4레인 채보로 바꾸고 네온 크리스털 터널에서 리듬을 플레이하세요."
+    />
+    <meta name="twitter:image" content="/images/neon-velocity-share-v1.png" />
+    <link rel="image_src" href="/images/neon-velocity-share-v1.png" />
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <link rel="preload" href="/images/judgement-sprites-v1.png" as="image" type="image/png" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:ital,wght@1,500;1,600;1,700;1,800;1,900&display=swap"
+      rel="stylesheet"
+    />
+    <title>Neon Velocity · Audio Chart Lab</title>
+  </head>
+  <body>
+    <div class="app-shell">
+      <header class="topbar">
+        <a id="brandHome" class="brand" href="#selectionView" aria-label="곡 선택 화면으로 이동">
+          <span class="brand-mark" aria-hidden="true">NV</span>
+          <span>
+            <strong>NEON VELOCITY</strong>
+            <small>AUDIO CHART LAB</small>
+          </span>
+        </a>
+      </header>
+
+      <main id="selectionView" class="selection-view">
+        <aside class="control-rail" aria-labelledby="generatorTitle" hidden>
+          <div class="rail-heading">
+            <h1 id="generatorTitle">음원을 게임 노트로</h1>
+            <p>MIDI 또는 MP3를 불러와 4레인 채보를 만듭니다.</p>
+          </div>
+
+          <section class="file-well" id="fileDropZone" aria-label="MIDI 또는 MP3 파일 선택 영역">
+            <input id="midiFileInput" type="file" accept=".mid,.midi,.mp3,audio/midi,audio/mpeg" hidden />
+            <div class="file-meta">
+              <strong id="fileName">시_분.mp3</strong>
+              <span id="fileSummary">기본 MP3 준비 중</span>
+            </div>
+            <button id="fileButton" class="text-button" type="button">파일 교체</button>
+          </section>
+
+          <div class="field-group">
+            <label for="trackSelect">플레이 트랙</label>
+            <select id="trackSelect" disabled>
+              <option>트랙 분석 중</option>
+            </select>
+          </div>
+
+          <div class="field-group">
+            <label for="difficultySelect">노트 밀도</label>
+            <select id="difficultySelect">
+              <option value="calm">CALM · 여유롭게</option>
+              <option value="standard" selected>STANDARD · 균형</option>
+              <option value="expert">EXPERT · 촘촘하게</option>
+            </select>
+          </div>
+
+          <div class="rail-actions">
+            <button id="generateButton" class="secondary-button" type="button" disabled>
+              다시 생성
+            </button>
+            <button id="exportButton" class="export-button" type="button" disabled>
+              JSON 저장
+            </button>
+          </div>
+        </aside>
+
+        <section class="selection-stage" aria-labelledby="selectionTitle">
+          <div class="launch-status transport-state" aria-live="polite">
+            <span id="stateDot" class="state-dot"></span>
+            <span id="stateText">음원 분석 중</span>
+          </div>
+
+          <div class="launch-content">
+            <p class="launch-kicker">AUDIO REACTIVE / FOUR LANES</p>
+            <h1 id="selectionTitle" class="launch-title">
+              <span class="sr-only">Neon Velocity</span>
+              <img
+                src="/images/neon-velocity-title-v1.png"
+                alt=""
+                aria-hidden="true"
+                decoding="async"
+              />
+            </h1>
+            <p class="launch-copy">CHASE THE BEAT INTO THE VOID</p>
+
+            <div class="launch-track" aria-label="선택된 곡과 난이도">
+              <strong id="selectionSongTitle">시 분</strong>
+              <span id="selectionTrackName">트랙 분석 중</span>
+              <div id="selectionDifficulty" class="difficulty-picker" role="group" aria-label="노트 밀도 선택">
+                <button type="button" data-difficulty="calm" aria-pressed="false">CALM</button>
+                <button type="button" data-difficulty="standard" aria-pressed="true">STANDARD</button>
+                <button type="button" data-difficulty="expert" aria-pressed="false">EXPERT</button>
+              </div>
+            </div>
+
+            <dl class="selection-summary" aria-label="생성된 채보 정보">
+              <div><dt>BPM</dt><dd id="selectionBpm">—</dd></div>
+              <div><dt>NOTES</dt><dd id="selectionNotes">—</dd></div>
+              <div><dt>LENGTH</dt><dd id="selectionLength">—</dd></div>
+              <div><dt>HOLDS</dt><dd id="selectionHoldCount">—</dd></div>
+            </dl>
+
+            <p id="selectionInstruction" class="launch-instruction">
+              D · F · J · K&nbsp;&nbsp;—&nbsp;&nbsp;판정선에 맞춰 리듬을 입력하세요
+            </p>
+
+            <button id="enterGameButton" class="enter-game-button" type="button" disabled>
+              <span>GAME START</span>
+              <small>PRESS ENTER</small>
+            </button>
+          </div>
+        </section>
+      </main>
+
+      <main id="gameView" class="game-view" hidden>
+        <section id="playfield" class="play-column" aria-label="리듬 게임 플레이">
+          <div class="game-context">
+            <button id="backButton" class="back-button" type="button" aria-label="곡 선택 화면으로 돌아가기">
+              <span aria-hidden="true">×</span><span class="sr-only">곡 선택 화면으로 돌아가기</span>
+            </button>
+            <span id="gameTrackLabel">NEON VELOCITY · STANDARD</span>
+          </div>
+
+          <div class="play-heading">
+            <div>
+              <p class="eyebrow">LIVE SYNTH / FOUR LANES</p>
+              <h2 id="gameTitle">리듬을 시각으로 잡으세요</h2>
+            </div>
+            <div class="score-cluster" aria-label="현재 게임 기록">
+              <div><span>SCORE</span><strong id="scoreValue">000000</strong></div>
+              <div><span>COMBO</span><strong id="comboValue">000</strong></div>
+              <div><span>ACCURACY</span><strong id="accuracyValue">100.0%</strong></div>
+            </div>
+          </div>
+
+          <div id="gameStage" class="game-stage" tabindex="0" aria-label="3D 리듬게임 플레이 필드">
+            <canvas id="gameCanvas"></canvas>
+            <div class="stage-vignette" aria-hidden="true"></div>
+            <div id="missFlash" class="miss-flash" aria-hidden="true"></div>
+            <div id="countdown" class="countdown" aria-live="assertive"></div>
+            <div id="judgement" class="judgement" aria-live="polite"></div>
+            <div id="effectCombo" class="effect-combo" aria-live="polite"></div>
+            <div id="stageMessage" class="stage-message">
+              <p class="eyebrow">READY SIGNAL</p>
+              <strong id="stageMessageTitle">MIDI를 분석하고 있습니다</strong>
+              <span id="stageMessageBody">잠시만 기다려 주세요.</span>
+            </div>
+            <div class="lane-labels" aria-hidden="true">
+              <span>D</span><span>F</span><span>J</span><span>K</span>
+            </div>
+          </div>
+
+          <div class="touch-controls" aria-label="터치 게임 입력">
+            <button type="button" data-lane="0"><span>D</span><small>01</small></button>
+            <button type="button" data-lane="1"><span>F</span><small>02</small></button>
+            <button type="button" data-lane="2"><span>J</span><small>03</small></button>
+            <button type="button" data-lane="3"><span>K</span><small>04</small></button>
+          </div>
+
+          <div class="primary-actions">
+            <button id="startButton" class="start-button" type="button" disabled>
+              다시 시작
+              <span>ENTER</span>
+            </button>
+            <p>원곡 또는 MIDI 사운드는 시작 버튼을 누른 뒤 브라우저에서 재생됩니다.</p>
+          </div>
+        </section>
+
+        <aside class="status-rail" aria-labelledby="sessionTitle">
+          <p class="eyebrow">SESSION FEED</p>
+          <h2 id="sessionTitle">이번 플레이</h2>
+
+          <div class="session-state">
+            <span id="sessionCode">STANDBY</span>
+            <strong id="sessionHeadline">첫 신호를 기다립니다</strong>
+            <p id="sessionDetail">D F J K 키 또는 화면 아래의 네 버튼을 사용하세요.</p>
+          </div>
+
+          <div class="timing-list" aria-label="판정 기준">
+            <div><i class="timing-perfect"></i><span>PERFECT</span><strong>±60ms</strong></div>
+            <div><i class="timing-great"></i><span>GREAT</span><strong>±120ms</strong></div>
+            <div><i class="timing-good"></i><span>GOOD</span><strong>±180ms</strong></div>
+            <div><i class="timing-miss"></i><span>MISS</span><strong>180ms+</strong></div>
+          </div>
+
+          <ol id="eventLog" class="event-log" aria-label="최근 판정">
+            <li><time>—</time><span>아직 기록이 없습니다</span></li>
+          </ol>
+
+          <div class="keyboard-note">
+            <span>KEY MAP</span>
+            <kbd>D</kbd><kbd>F</kbd><kbd>J</kbd><kbd>K</kbd>
+          </div>
+        </aside>
+      </main>
+    </div>
+
+    <script type="module" src="/src/main.js"></script>
+  </body>
+</html>
