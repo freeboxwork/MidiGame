@@ -34,7 +34,7 @@ npm run dev
 명령줄 변환에는 [FFmpeg](https://ffmpeg.org/)가 필요합니다. 입력 MP3를 44.1kHz 모노 PCM으로 디코딩한 다음, 브라우저와 동일한 자동 채보 엔진으로 JSON을 만듭니다.
 
 ```powershell
-npm run audio:notes -- "public/audio/시_분.mp3" "output/시_분.standard.chart.json" standard
+npm run audio:notes -- "public/audio/neon-velocity-track.mp3" "output/시_분.standard.chart.json" standard
 ```
 
 출력 경로를 생략하면 `output/<파일명>.<난이도>.chart.json`에 저장됩니다.
@@ -47,7 +47,7 @@ npm run audio:notes -- "music/my-song.mp3" "output/my-song.expert.chart.json" ex
 난이도는 `calm`, `standard`, `expert` 중 하나입니다. 분석 요약과 앞부분 노트만 확인하려면 아래 명령을 사용합니다.
 
 ```powershell
-npm run audio:analyze -- "public/audio/시_분.mp3" standard
+npm run audio:analyze -- "public/audio/neon-velocity-track.mp3" standard
 ```
 
 MP3 변환은 음을 악보처럼 채보하는 음정 인식이 아니라, 파형의 저·중·고역 에너지 변화에서 타격 시점을 찾는 방식입니다. 따라서 결과는 곡의 믹싱과 리듬 선명도에 영향을 받습니다. 세부 단계와 조절 기준은 [MP3 자동 채보 로직](docs/mp3-to-note-data.md)에 정리했습니다.
@@ -124,4 +124,4 @@ npm run verify:browser
 
 ## 참고
 
-`public/audio/시_분.mp3`는 현재 데모 플레이에 사용되는 원본 음원입니다. 저장소를 공개하거나 음원을 재배포하기 전에는 해당 파일의 이용·배포 권리를 확인해 주세요.
+`public/audio/neon-velocity-track.mp3`는 게임 화면에 `시_분.mp3`로 표시되는 현재 데모 원본 음원입니다. 저장소를 공개하거나 음원을 재배포하기 전에는 해당 파일의 이용·배포 권리를 확인해 주세요.

@@ -1249,6 +1249,7 @@ export class RhythmGame {
   animate() {
     requestAnimationFrame(() => this.animate());
     const delta = Math.min(this.clock.getDelta(), 0.05);
+    if (this.container.clientWidth < 2 || this.container.clientHeight < 2) return;
     const elapsed = this.clock.elapsedTime;
 
     this.updateHitEffects(delta);
@@ -1337,8 +1338,9 @@ export class RhythmGame {
   }
 
   resize() {
-    const width = Math.max(1, this.container.clientWidth);
-    const height = Math.max(1, this.container.clientHeight);
+    const width = this.container.clientWidth;
+    const height = this.container.clientHeight;
+    if (width < 2 || height < 2) return;
     const pixelCount = width * height;
     const devicePixelRatio = window.devicePixelRatio || 1;
     const is4K = width >= 3200 || pixelCount >= 6_500_000;

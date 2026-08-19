@@ -265,7 +265,7 @@ function setMessage(title, body, visible = true) {
 
 async function loadDefaultTrack() {
   try {
-    const response = await fetch("/audio/시_분.mp3");
+    const response = await fetch("/audio/neon-velocity-track.mp3");
     if (!response.ok) throw new Error(`기본 MP3 요청 실패 (${response.status})`);
     await loadAudioBuffer(await response.arrayBuffer(), "시_분.mp3");
   } catch (error) {
