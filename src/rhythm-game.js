@@ -1,13 +1,39 @@
 import * as THREE from "three";
 import { RoundedBoxGeometry } from "three/addons/geometries/RoundedBoxGeometry.js";
 import { EffectComposer } from "three/addons/postprocessing/EffectComposer.js";
+import { FXAAPass } from "three/addons/postprocessing/FXAAPass.js";
 import { OutputPass } from "three/addons/postprocessing/OutputPass.js";
 import { RenderPass } from "three/addons/postprocessing/RenderPass.js";
 import { UnrealBloomPass } from "three/addons/postprocessing/UnrealBloomPass.js";
 import { HOLD_THRESHOLD_SECONDS } from "./chart-generator.js";
 
-const LANE_X = [-2.25, -0.75, 0.75, 2.25];
-const LANE_COLORS = [0x5ef2ce, 0x8ad8ff, 0xd69cff, 0xffc86b];
+const LANE_SPACING = 1.2;
+const TRACK_LEFT_X = -2.4;
+const LANE_X = [-1.8, -0.6, 0.6, 1.8];
+const LANE_COLORS = [0x22e3d5, 0x4b99ff, 0xb74ff4, 0xffbe58];
+const TRACK_EDGE_COLORS = [0x35f6e7, 0x52a8ff, 0xd45cff, 0xffb85a, 0xffd58a];
+const TRACK_LENGTH = 48;
+const TRACK_FRONT_Z = 4.8;
+const TRACK_CENTER_Z = TRACK_FRONT_Z - TRACK_LENGTH * 0.5;
+const TRACK_FADE_START_Z = -13.5;
+const TRACK_FADE_END_Z = -36;
+const SCENE_PALETTE = {
+  surface: 0x03060d,
+  surfaceRaised: 0x080d17,
+  boundary: 0x172538,
+  materialEdge: 0x29415b,
+  keyLight: 0xfff8f0,
+  coolFill: 0x4b8dff,
+  violetFill: 0x9b52ff,
+};
+const CAMERA_FRAMING = {
+  desktopFov: 44,
+  compactLandscapeFov: 52,
+  compactHeightStart: 900,
+  compactHeightEnd: 640,
+  position: [0, 4.4, 9.9],
+  target: [0, -0.65, -18.5],
+};
 const MIRROR_DEFAULTS = {
   tile: 0xd8f2ff,
   tileEmissive: 0x123f5a,
@@ -21,6 +47,9 @@ const TRAVEL_SECONDS = 3.1;
 const COUNTDOWN_SECONDS = 3;
 const TRAVEL_DISTANCE = HIT_Z - SPAWN_Z;
 const NOTE_BASE_DEPTH = 0.56;
+const PAD_FOOTPRINT_SCALE = 0.9;
+const PAD_REST_Y = 0.04;
+const PAD_PRESS_TRAVEL = 0.085;
 const GOOD_WINDOW = 0.18;
 const HIT_EFFECT_PROFILES = {
   PERFECT: { intensity: 1, shards: 14, duration: 0.46 },
@@ -40,7 +69,11 @@ const JUDGEMENT_WINDOWS = [
   { name: "GOOD", seconds: GOOD_WINDOW, points: 350, accuracy: 0.45 },
 ];
 
-function applyTrackDepthFade(material, fadeStart = -11.5, fadeEnd = -28) {
+function applyTrackDepthFade(
+  material,
+  fadeStart = TRACK_FADE_START_Z,
+  fadeEnd = TRACK_FADE_END_Z,
+) {
   material.transparent = true;
   material.onBeforeCompile = (shader) => {
     shader.vertexShader = shader.vertexShader
@@ -68,10 +101,11 @@ function applyTrackDepthFade(material, fadeStart = -11.5, fadeEnd = -28) {
   return material;
 }
 
-function createSoftNoteGlowMaterial(color) {
+function createSoftNoteGlowMaterial(color, intensity = 1) {
   return new THREE.ShaderMaterial({
     uniforms: {
-      uColor: { value: new THREE.Color(color).lerp(new THREE.Color(0xffffff), 0.18) },
+      uColor: { value: new THREE.Color(color).lerp(new THREE.Color(0xffffff), 0.28) },
+      uIntensity: { value: intensity },
     },
     vertexShader: `
       varying vec2 vGlowUv;
@@ -82,13 +116,12 @@ function createSoftNoteGlowMaterial(color) {
     `,
     fragmentShader: `
       uniform vec3 uColor;
+      uniform float uIntensity;
       varying vec2 vGlowUv;
       void main() {
         vec2 centered = (vGlowUv - 0.5) * 2.0;
-        float radius = length(centered);
-        float outerGlow = pow(max(0.0, 1.0 - radius), 1.65);
-        float innerGlow = pow(max(0.0, 1.0 - radius * 1.72), 1.35);
-        float alpha = outerGlow * 0.38 + innerGlow * 0.08;
+        float feather = 1.0 - smoothstep(0.02, 1.0, length(centered));
+        float alpha = pow(feather, 1.85) * 0.4 * uIntensity;
         if (alpha < 0.004) discard;
         gl_FragColor = vec4(uColor, alpha);
       }
@@ -126,6 +159,8 @@ export class RhythmGame {
     this.onHoldState = onHoldState;
     this.chart = null;
     this.runtimeNotes = [];
+    this.noteMeshPool = [];
+    this.freeNoteMeshes = [];
     this.state = "loading";
     this.lastCountdown = null;
     this.pulse = [0, 0, 0, 0];
@@ -174,165 +209,307 @@ export class RhythmGame {
     });
     this.renderer.outputColorSpace = THREE.SRGBColorSpace;
     this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    this.renderer.toneMappingExposure = 1.04;
+    this.renderer.toneMappingExposure = 1.03;
+    this.renderer.shadowMap.enabled = true;
+    this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+    this.renderer.shadowMap.autoUpdate = false;
+    this.renderer.shadowMap.needsUpdate = true;
+    this.canvas.dataset.shadowUpdates = "static-cache";
 
     this.scene = new THREE.Scene();
     this.scene.background = new THREE.Color(0x010108);
     this.scene.fog = new THREE.FogExp2(0x02030b, 0.019);
-    this.cameraBase = new THREE.Vector3(0, 6.45, 9.7);
-    this.cameraTarget = new THREE.Vector3(0, 0, -8.8);
-    this.camera = new THREE.PerspectiveCamera(52, 1, 0.1, 100);
+    this.cameraBase = new THREE.Vector3(...CAMERA_FRAMING.position);
+    this.cameraTarget = new THREE.Vector3(...CAMERA_FRAMING.target);
+    this.camera = new THREE.PerspectiveCamera(CAMERA_FRAMING.desktopFov, 1, 0.1, 100);
     this.camera.position.copy(this.cameraBase);
     this.camera.lookAt(this.cameraTarget);
     this.canvas.dataset.hitShakeCount = "0";
     this.canvas.dataset.mirrorFlashCount = "0";
 
-    const ambient = new THREE.HemisphereLight(0xb5eaff, 0x08060f, 1.35);
+    const ambient = new THREE.HemisphereLight(0xa9d7ff, 0x05020b, 0.78);
     this.scene.add(ambient);
-    const keyLight = new THREE.DirectionalLight(0xffffff, 3.1);
-    keyLight.position.set(4.5, 8, 5);
-    this.scene.add(keyLight);
-    const tunnelLight = new THREE.PointLight(0x5ef2ce, 13, 23, 1.8);
-    tunnelLight.position.set(-3.8, 2.2, -8.5);
+    const keyLight = new THREE.DirectionalLight(SCENE_PALETTE.keyLight, 2.9);
+    keyLight.position.set(-3.8, 10.5, 7.5);
+    keyLight.target.position.set(0, 0, -8);
+    keyLight.castShadow = true;
+    keyLight.shadow.mapSize.set(1024, 1024);
+    keyLight.shadow.camera.left = -8;
+    keyLight.shadow.camera.right = 8;
+    keyLight.shadow.camera.top = 9;
+    keyLight.shadow.camera.bottom = -7;
+    keyLight.shadow.camera.near = 1;
+    keyLight.shadow.camera.far = 46;
+    keyLight.shadow.bias = -0.00015;
+    keyLight.shadow.normalBias = 0.035;
+    keyLight.shadow.radius = 3;
+    this.scene.add(keyLight, keyLight.target);
+
+    const softbox = new THREE.RectAreaLight(0xe8f4ff, 1.65, 7.5, 9);
+    softbox.position.set(0, 7.5, 1.5);
+    softbox.lookAt(0, 0, -7);
+    this.scene.add(softbox);
+
+    const tunnelLight = new THREE.PointLight(SCENE_PALETTE.coolFill, 5.5, 25, 1.8);
+    tunnelLight.position.set(-3.4, 2.6, -7.5);
     this.scene.add(tunnelLight);
-    const horizonLight = new THREE.PointLight(0xd69cff, 11, 25, 1.9);
-    horizonLight.position.set(3.7, 2.6, -16);
+    const horizonLight = new THREE.PointLight(SCENE_PALETTE.violetFill, 5, 27, 1.9);
+    horizonLight.position.set(3.3, 3.2, -14);
     this.scene.add(horizonLight);
 
     const floorMaterial = applyTrackDepthFade(
-      new THREE.MeshStandardMaterial({
-        color: 0x0b1118,
-        emissive: 0x06121b,
-        emissiveIntensity: 0.42,
-        metalness: 0.55,
-        roughness: 0.62,
-        opacity: 0.72,
+      new THREE.MeshPhysicalMaterial({
+        color: SCENE_PALETTE.surface,
+        emissive: 0x030915,
+        emissiveIntensity: 0.18,
+        metalness: 0.58,
+        roughness: 0.52,
+        clearcoat: 0.68,
+        clearcoatRoughness: 0.3,
+        opacity: 0.94,
       }),
     );
-    const floor = new THREE.Mesh(new THREE.PlaneGeometry(7.35, 42), floorMaterial);
+    const floor = new THREE.Mesh(new THREE.PlaneGeometry(5.96, TRACK_LENGTH), floorMaterial);
     floor.rotation.x = -Math.PI / 2;
-    floor.position.set(0, -0.08, -16.2);
+    floor.position.set(0, -0.08, TRACK_CENTER_Z);
+    floor.receiveShadow = true;
     this.scene.add(floor);
 
-    const laneBedGeometry = new THREE.BoxGeometry(1.43, 0.025, 42);
+    const laneBedGeometry = new THREE.BoxGeometry(LANE_SPACING, 0.045, TRACK_LENGTH);
     for (let lane = 0; lane < 4; lane += 1) {
+      const laneColor = new THREE.Color(LANE_COLORS[lane]);
       const laneBed = new THREE.Mesh(
         laneBedGeometry,
         applyTrackDepthFade(
-          new THREE.MeshStandardMaterial({
-            color: 0x0b1219,
+          new THREE.MeshPhysicalMaterial({
+            color: laneColor.clone().multiplyScalar(0.055),
             emissive: LANE_COLORS[lane],
-            emissiveIntensity: 0.045,
-            metalness: 0.72,
-            roughness: 0.4,
-            opacity: 0.76,
+            emissiveIntensity: 0.075,
+            metalness: 0.52,
+            roughness: 0.5,
+            clearcoat: 0.68,
+            clearcoatRoughness: 0.3,
+            opacity: 0.9,
           }),
         ),
       );
-      laneBed.position.set(LANE_X[lane], -0.045, -16.25);
+      laneBed.position.set(LANE_X[lane], -0.045, TRACK_CENTER_Z - 0.05);
+      laneBed.receiveShadow = true;
       this.scene.add(laneBed);
     }
 
     const wallMaterial = applyTrackDepthFade(
       new THREE.MeshStandardMaterial({
-        color: 0x111b24,
-        emissive: 0x28485c,
-        emissiveIntensity: 0.14,
+        color: SCENE_PALETTE.surfaceRaised,
+        emissive: SCENE_PALETTE.materialEdge,
+        emissiveIntensity: 0.22,
         metalness: 0.82,
-        roughness: 0.28,
-        opacity: 0.38,
+        roughness: 0.24,
+        opacity: 0.7,
       }),
     );
-    const wallGeometry = new RoundedBoxGeometry(0.42, 0.36, 42, 4, 0.1);
+    const wallGeometry = new RoundedBoxGeometry(0.27, 0.22, TRACK_LENGTH, 4, 0.08);
     for (const side of [-1, 1]) {
       const wall = new THREE.Mesh(wallGeometry, wallMaterial);
-      wall.position.set(side * 3.55, 0.08, -16.25);
+      wall.position.set(side * 2.84, 0.015, TRACK_CENTER_Z - 0.05);
+      wall.receiveShadow = true;
       this.scene.add(wall);
     }
 
-    const railMaterial = applyTrackDepthFade(
-      new THREE.MeshBasicMaterial({ color: 0x334453, opacity: 0.82 }),
-    );
     for (let index = 0; index <= 4; index += 1) {
-      const rail = new THREE.Mesh(new THREE.BoxGeometry(0.025, 0.018, 42), railMaterial);
-      rail.position.set(-3 + index * 1.5, 0.005, -16.3);
-      this.scene.add(rail);
+      if (index === 2) continue;
+      const color = TRACK_EDGE_COLORS[index];
+      const glowRail = new THREE.Mesh(
+        new THREE.BoxGeometry(0.052, 0.008, TRACK_LENGTH),
+        applyTrackDepthFade(
+          new THREE.MeshBasicMaterial({
+            color,
+            transparent: true,
+            opacity: 0.1,
+            depthWrite: false,
+            blending: THREE.AdditiveBlending,
+            toneMapped: false,
+          }),
+        ),
+      );
+      glowRail.position.set(TRACK_LEFT_X + index * LANE_SPACING, 0.026, TRACK_CENTER_Z - 0.1);
+      const rail = new THREE.Mesh(
+        new THREE.BoxGeometry(0.013, 0.018, TRACK_LENGTH),
+        applyTrackDepthFade(
+          new THREE.MeshBasicMaterial({
+            color,
+            opacity: 0.62,
+            toneMapped: false,
+          }),
+        ),
+      );
+      rail.position.set(TRACK_LEFT_X + index * LANE_SPACING, 0.036, TRACK_CENTER_Z - 0.1);
+      this.scene.add(glowRail, rail);
     }
 
-    const crossMaterial = applyTrackDepthFade(
-      new THREE.MeshBasicMaterial({ color: 0x182632, opacity: 0.86 }),
+    const centerRailGeometry = new THREE.BufferGeometry();
+    centerRailGeometry.setAttribute(
+      "position",
+      new THREE.Float32BufferAttribute(
+        [
+          0,
+          -0.02,
+          TRACK_FRONT_Z - 0.05,
+          0,
+          -0.02,
+          TRACK_FRONT_Z - 0.05,
+          0,
+          -0.02,
+          TRACK_FADE_END_Z - 2,
+          0,
+          -0.02,
+          TRACK_FADE_END_Z - 2,
+        ],
+        3,
+      ),
     );
-    for (let index = 0; index < 22; index += 1) {
-      const cross = new THREE.Mesh(new THREE.BoxGeometry(6.05, 0.012, 0.018), crossMaterial);
-      cross.position.set(0, 0.012, HIT_Z - index * 1.5);
+    centerRailGeometry.setAttribute(
+      "aSide",
+      new THREE.Float32BufferAttribute([-1, 1, -1, 1], 1),
+    );
+    centerRailGeometry.setIndex([0, 1, 2, 2, 1, 3]);
+    this.centerRailMaterial = new THREE.ShaderMaterial({
+      uniforms: {
+        uColor: { value: new THREE.Color(0xb54bd8) },
+        uViewportWidth: { value: Math.max(1, this.container.clientWidth) },
+        uHalfWidthCss: { value: 0.72 },
+      },
+      vertexShader: `
+        attribute float aSide;
+        uniform float uViewportWidth;
+        uniform float uHalfWidthCss;
+        varying float vWorldZ;
+        void main() {
+          vec4 worldPosition = modelMatrix * vec4(position, 1.0);
+          vec4 clipPosition = projectionMatrix * viewMatrix * worldPosition;
+          clipPosition.x += aSide * uHalfWidthCss * 2.0 * clipPosition.w / uViewportWidth;
+          vWorldZ = worldPosition.z;
+          gl_Position = clipPosition;
+        }
+      `,
+      fragmentShader: `
+        uniform vec3 uColor;
+        varying float vWorldZ;
+        void main() {
+          float depthFade = smoothstep(${(TRACK_FADE_END_Z - 2).toFixed(1)}, ${TRACK_FADE_START_Z.toFixed(1)}, vWorldZ);
+          gl_FragColor = vec4(uColor, 0.82 * depthFade);
+        }
+      `,
+      transparent: true,
+      depthTest: false,
+      depthWrite: false,
+      toneMapped: false,
+    });
+    const centerRail = new THREE.Mesh(centerRailGeometry, this.centerRailMaterial);
+    centerRail.frustumCulled = false;
+    centerRail.renderOrder = 3;
+    this.scene.add(centerRail);
+
+    const crossMaterial = applyTrackDepthFade(
+      new THREE.MeshBasicMaterial({ color: 0x35506f, opacity: 0.38 }),
+    );
+    const crossCount = Math.ceil((HIT_Z - TRACK_FADE_END_Z) / 1.5);
+    for (let index = 0; index < crossCount; index += 1) {
+      const cross = new THREE.Mesh(new THREE.BoxGeometry(4.76, 0.01, 0.022), crossMaterial);
+      cross.position.set(0, 0.024, HIT_Z - index * 1.5);
       this.scene.add(cross);
     }
 
     this.createCosmicEnvironment();
 
     this.padMaterials = LANE_COLORS.map(
-      (color) =>
-        new THREE.MeshPhysicalMaterial({
-          color: new THREE.Color(color).multiplyScalar(0.13),
+      (color) => {
+        const surfaceColor = new THREE.Color(color).lerp(new THREE.Color(0xffffff), 0.08);
+        return new THREE.MeshPhysicalMaterial({
+          color: surfaceColor.multiplyScalar(0.48),
           emissive: color,
-          emissiveIntensity: 0.08,
+          emissiveIntensity: 0.2,
           transparent: false,
           opacity: 1,
-          metalness: 0.66,
-          roughness: 0.26,
-          clearcoat: 0.92,
-          clearcoatRoughness: 0.12,
-        }),
+          metalness: 0.28,
+          roughness: 0.22,
+          clearcoat: 1,
+          clearcoatRoughness: 0.08,
+        });
+      },
     );
     this.padMeshes = [];
-    const padFrameGeometry = new RoundedBoxGeometry(1.38, 0.09, 0.78, 5, 0.085);
-    const padBaseGeometry = new RoundedBoxGeometry(1.27, 0.17, 0.68, 6, 0.095);
+    const padShadowGeometry = new RoundedBoxGeometry(1.17, 0.055, 0.84, 5, 0.09);
+    const padFrameGeometry = new RoundedBoxGeometry(1.11, 0.095, 0.78, 5, 0.085);
+    const padBaseGeometry = new RoundedBoxGeometry(1.02, 0.18, 0.66, 6, 0.1);
+    const padShadowMaterial = new THREE.MeshStandardMaterial({
+      color: 0x000105,
+      roughness: 0.82,
+      metalness: 0.15,
+    });
     const padFrameMaterial = new THREE.MeshPhysicalMaterial({
-      color: 0x07101a,
-      emissive: 0x20384c,
-      emissiveIntensity: 0.1,
-      metalness: 0.88,
-      roughness: 0.2,
+      color: 0x03060b,
+      emissive: 0x122238,
+      emissiveIntensity: 0.18,
+      metalness: 0.84,
+      roughness: 0.18,
       clearcoat: 1,
-      clearcoatRoughness: 0.1,
+      clearcoatRoughness: 0.08,
     });
     for (let lane = 0; lane < 4; lane += 1) {
       const receptor = new THREE.Group();
+      const aura = new THREE.Mesh(
+        new THREE.PlaneGeometry(1.49, 1.1),
+        createSoftNoteGlowMaterial(LANE_COLORS[lane], 0.34),
+      );
+      aura.rotation.x = -Math.PI / 2;
+      aura.position.y = -0.035;
+      aura.renderOrder = 1;
+      const shadowBase = new THREE.Mesh(padShadowGeometry, padShadowMaterial);
+      shadowBase.position.set(0.028, -0.065, 0.045);
+      shadowBase.receiveShadow = true;
       const frame = new THREE.Mesh(padFrameGeometry, padFrameMaterial);
       frame.position.y = -0.025;
+      frame.castShadow = true;
+      frame.receiveShadow = true;
       const pad = new THREE.Mesh(padBaseGeometry, this.padMaterials[lane]);
-      pad.position.y = 0.035;
-      receptor.add(frame, pad);
+      pad.position.y = PAD_REST_Y;
+      pad.castShadow = true;
+      pad.receiveShadow = true;
+      receptor.add(aura, shadowBase, frame, pad);
       receptor.position.set(LANE_X[lane], 0.02, HIT_Z);
+      receptor.scale.set(PAD_FOOTPRINT_SCALE, 1, PAD_FOOTPRINT_SCALE);
       this.padMeshes.push(pad);
       this.scene.add(receptor);
     }
 
-    this.noteGeometry = new RoundedBoxGeometry(1.14, 0.24, 0.56, 5, 0.095);
-    this.noteGlowGeometry = new THREE.PlaneGeometry(1.78, 1.1);
+    this.noteGeometry = new RoundedBoxGeometry(0.86, 0.12, 0.5, 5, 0.034);
+    this.noteGlowGeometry = new THREE.PlaneGeometry(1.12, 0.62);
     this.hitRingGeometry = new THREE.RingGeometry(0.19, 0.27, 30);
     this.hitShardGeometry = new THREE.BoxGeometry(0.055, 0.055, 0.24);
     this.noteMaterials = LANE_COLORS.map(
-      (color) =>
-        new THREE.MeshPhysicalMaterial({
-          color,
+      (color) => {
+        const surfaceColor = new THREE.Color(color).lerp(new THREE.Color(0xffffff), 0.14);
+        return new THREE.MeshPhysicalMaterial({
+          color: surfaceColor,
           emissive: color,
-          emissiveIntensity: 0.36,
-          metalness: 0.24,
-          roughness: 0.26,
-          clearcoat: 0.95,
-          clearcoatRoughness: 0.14,
-        }),
+          emissiveIntensity: 0.46,
+          metalness: 0.14,
+          roughness: 0.2,
+          clearcoat: 1,
+          clearcoatRoughness: 0.07,
+        });
+      },
     );
-    this.noteGlowMaterials = LANE_COLORS.map((color) => createSoftNoteGlowMaterial(color));
+    this.noteGlowMaterials = LANE_COLORS.map((color) => createSoftNoteGlowMaterial(color, 0.72));
     this.holdMaterials = LANE_COLORS.map((color) => {
       const heldColor = new THREE.Color(color).lerp(new THREE.Color(0xffffff), 0.34);
       return new THREE.MeshPhysicalMaterial({
-        color: heldColor,
+        color: heldColor.lerp(new THREE.Color(0xffffff), 0.16),
         emissive: color,
-        emissiveIntensity: 0.4,
+        emissiveIntensity: 0.72,
         metalness: 0.12,
-        roughness: 0.15,
+        roughness: 0.14,
         clearcoat: 1,
         clearcoatRoughness: 0.08,
       });
@@ -426,7 +603,7 @@ export class RhythmGame {
       positions[offset + 1] = Math.sin(angle) * radius * 0.56 + 2.1;
       positions[offset + 2] = -52 + Math.random() * 60;
       this.starSpeeds[index] = 4.2 + Math.random() * 8.8;
-      sizes[index] = 0.03 + Math.pow(Math.random(), 2.2) * 0.075;
+      sizes[index] = 0.034 + Math.pow(Math.random(), 2.2) * 0.082;
       phases[index] = Math.random() * Math.PI * 2;
       temperatures[index] = Math.random();
       styles[index] = Math.random();
@@ -457,12 +634,12 @@ export class RhythmGame {
         void main() {
           vec4 mvPosition = modelViewMatrix * vec4(position, 1.0);
           float cameraDepth = max(1.0, -mvPosition.z);
-          gl_PointSize = clamp(aSize * uPointScale / cameraDepth, 1.25, 16.0);
+        gl_PointSize = clamp(aSize * uPointScale * 1.475 / cameraDepth, 2.69, 13.13);
           gl_Position = projectionMatrix * mvPosition;
           vTemperature = aTemperature;
           vStyle = aStyle;
-          vDepthFade = mix(0.32, 1.0, 1.0 - smoothstep(8.0, 65.0, cameraDepth));
-          vTwinkle = 0.72 + 0.28 * sin(uTime * 1.6 + aPhase);
+          vDepthFade = mix(0.62, 1.0, 1.0 - smoothstep(8.0, 65.0, cameraDepth));
+          vTwinkle = 0.88 + 0.12 * sin(uTime * 1.35 + aPhase);
         }
       `,
       fragmentShader: `
@@ -478,26 +655,30 @@ export class RhythmGame {
 
           float core = 1.0 - smoothstep(0.0, 0.0324, radiusSquared);
           float radialFade = 1.0 - smoothstep(0.0, 0.25, radiusSquared);
-          float halo = radialFade * radialFade * 0.48;
+          float halo = radialFade * radialFade * 0.32;
           float horizontalSpike = (1.0 - smoothstep(0.0, 0.035, abs(point.y))) *
             (1.0 - smoothstep(0.08, 0.48, abs(point.x)));
           float verticalSpike = (1.0 - smoothstep(0.0, 0.035, abs(point.x))) *
             (1.0 - smoothstep(0.08, 0.48, abs(point.y)));
-          float sparkleShape = (horizontalSpike + verticalSpike) * step(0.9, vStyle) * 0.58;
+          float sparkleShape = (horizontalSpike + verticalSpike) * step(0.96, vStyle) * 0.3;
           float edgeFade = 1.0 - smoothstep(0.1225, 0.25, radiusSquared);
-          float alpha = (halo + core + sparkleShape) * edgeFade * vTwinkle * vDepthFade;
+          float alpha = clamp(
+            (halo + core + sparkleShape) * edgeFade * vTwinkle * vDepthFade,
+            0.0,
+            0.9
+          );
 
           vec3 warmWhite = vec3(1.0, 0.88, 0.72);
           vec3 coolWhite = vec3(0.62, 0.86, 1.0);
           vec3 starColor = mix(warmWhite, coolWhite, smoothstep(0.08, 0.92, vTemperature));
-          float brightness = 0.72 + core * 1.05 + sparkleShape * 0.55;
+          float brightness = 0.56 + core * 0.2 + sparkleShape * 0.08;
           gl_FragColor = vec4(starColor * brightness, alpha);
         }
       `,
       transparent: true,
       depthWrite: false,
       depthTest: true,
-      blending: THREE.AdditiveBlending,
+      blending: THREE.NormalBlending,
       toneMapped: false,
     });
     this.stars = new THREE.Points(starGeometry, this.starMaterial);
@@ -518,9 +699,10 @@ export class RhythmGame {
         new THREE.LineBasicMaterial({
           color: index % 3 === 0 ? 0x8ad8ff : index % 3 === 1 ? 0x9a6cff : 0x5ef2ce,
           transparent: true,
-          opacity: 0.08 + (index % 4) * 0.013,
+          opacity: (0.14 + (index % 4) * 0.018) * 0.8,
           depthWrite: false,
           blending: THREE.AdditiveBlending,
+          toneMapped: false,
         }),
       );
       ring.position.set(0, 1.5, 4 - index * 3.55);
@@ -536,7 +718,7 @@ export class RhythmGame {
 
   createMirrorBall() {
     this.mirrorBall = new THREE.Group();
-    this.mirrorBall.position.set(0, 1.2, -35.5);
+    this.mirrorBall.position.set(0, 5.45, -35.5);
     this.mirrorBall.scale.setScalar(1.105);
 
     this.mirrorBaseMaterial = new THREE.MeshPhysicalMaterial({
@@ -649,9 +831,11 @@ export class RhythmGame {
   setupPostProcessing() {
     this.composer = new EffectComposer(this.renderer);
     this.composer.addPass(new RenderPass(this.scene, this.camera));
-    this.bloomPass = new UnrealBloomPass(new THREE.Vector2(1, 1), 0.52, 0.24, 0.92);
+    this.bloomPass = new UnrealBloomPass(new THREE.Vector2(1, 1), 0.6, 0.3, 0.86);
     this.composer.addPass(this.bloomPass);
     this.composer.addPass(new OutputPass());
+    this.fxaaPass = new FXAAPass();
+    this.composer.addPass(this.fxaaPass);
   }
 
   updateMirrorBall(delta) {
@@ -777,25 +961,16 @@ export class RhythmGame {
 
   setChart(chart) {
     this.stop(false);
-    for (const runtime of this.runtimeNotes) this.scene.remove(runtime.mesh);
-    this.runtimeNotes = chart.notes.map((note) => {
-      const mesh = new THREE.Mesh(this.noteGeometry, this.noteMaterials[note.lane]);
-      const glow = new THREE.Mesh(this.noteGlowGeometry, this.noteGlowMaterials[note.lane]);
-      glow.position.y = 0.158;
-      glow.rotation.x = -Math.PI / 2;
-      glow.renderOrder = 3;
-      mesh.add(glow);
-      const hold = isHoldNote(note);
-      mesh.position.set(LANE_X[note.lane], 0.18, SPAWN_Z);
-      mesh.scale.z = hold
-        ? Math.max(1.3, (note.duration / TRAVEL_SECONDS) * TRAVEL_DISTANCE / NOTE_BASE_DEPTH)
-        : Math.min(2.8, 0.85 + note.duration * 1.45);
-      mesh.visible = false;
-      mesh.rotation.x = -0.025;
-      this.scene.add(mesh);
-      return { note, mesh, status: "pending", isHold: hold, startTiming: null };
-    });
+    this.runtimeNotes = chart.notes.map((note) => ({
+      note,
+      mesh: null,
+      status: "pending",
+      isHold: isHoldNote(note),
+      startTiming: null,
+    }));
     this.chart = chart;
+    this.canvas.dataset.chartNoteCount = String(this.runtimeNotes.length);
+    this.updateNotePoolDiagnostics();
     this.stats = this.createStats();
     this.state = "ready";
     this.emitUpdate();
@@ -822,8 +997,7 @@ export class RhythmGame {
     for (const runtime of this.runtimeNotes) {
       runtime.status = "pending";
       runtime.startTiming = null;
-      runtime.mesh.material = this.noteMaterials[runtime.note.lane];
-      runtime.mesh.visible = false;
+      this.releaseNoteMesh(runtime);
     }
     this.lastCountdown = null;
     await this.synth.start(events, COUNTDOWN_SECONDS);
@@ -837,8 +1011,7 @@ export class RhythmGame {
     this.resetHoldStates();
     if (this.chart) this.state = "ready";
     for (const runtime of this.runtimeNotes) {
-      runtime.mesh.visible = false;
-      runtime.mesh.material = this.noteMaterials[runtime.note.lane];
+      this.releaseNoteMesh(runtime);
     }
     for (const effect of this.hitEffects) {
       effect.active = false;
@@ -856,6 +1029,59 @@ export class RhythmGame {
       this.activeHolds[lane] = null;
       this.onHoldState?.(lane, false);
     }
+  }
+
+  createPooledNoteMesh() {
+    const mesh = new THREE.Mesh(this.noteGeometry, this.noteMaterials[0]);
+    const glow = new THREE.Mesh(this.noteGlowGeometry, this.noteGlowMaterials[0]);
+    glow.position.y = -0.075;
+    glow.rotation.x = -Math.PI / 2;
+    glow.renderOrder = 2;
+    mesh.add(glow);
+    mesh.visible = false;
+    mesh.rotation.x = -0.025;
+    mesh.userData.glow = glow;
+    this.scene.add(mesh);
+    this.noteMeshPool.push(mesh);
+    this.canvas.dataset.notePoolSize = String(this.noteMeshPool.length);
+    return mesh;
+  }
+
+  acquireNoteMesh(runtime) {
+    if (runtime.mesh) return runtime.mesh;
+    const mesh = this.freeNoteMeshes.pop() ?? this.createPooledNoteMesh();
+    const { note, isHold } = runtime;
+    mesh.material = this.noteMaterials[note.lane];
+    mesh.userData.glow.material = this.noteGlowMaterials[note.lane];
+    mesh.position.set(LANE_X[note.lane], 0.1, SPAWN_Z);
+    mesh.scale.set(
+      1,
+      1,
+      isHold
+        ? Math.max(1.3, (note.duration / TRAVEL_SECONDS) * TRAVEL_DISTANCE / NOTE_BASE_DEPTH)
+        : Math.min(2.8, 0.85 + note.duration * 1.45),
+    );
+    mesh.visible = true;
+    runtime.mesh = mesh;
+    this.updateNotePoolDiagnostics();
+    return mesh;
+  }
+
+  releaseNoteMesh(runtime) {
+    const mesh = runtime.mesh;
+    if (!mesh) return;
+    mesh.visible = false;
+    mesh.material = this.noteMaterials[runtime.note.lane];
+    runtime.mesh = null;
+    this.freeNoteMeshes.push(mesh);
+    this.updateNotePoolDiagnostics();
+  }
+
+  updateNotePoolDiagnostics() {
+    this.canvas.dataset.notePoolSize = String(this.noteMeshPool.length);
+    this.canvas.dataset.activeNoteMeshes = String(
+      this.noteMeshPool.length - this.freeNoteMeshes.length,
+    );
   }
 
   handleKeyDown(event) {
@@ -877,7 +1103,7 @@ export class RhythmGame {
   }
 
   hitLane(lane) {
-    this.pulse[lane] = 1;
+    this.pulse[lane] = 1.12;
     if (this.state !== "playing") return;
     if (this.activeHolds[lane]) return;
 
@@ -914,8 +1140,9 @@ export class RhythmGame {
     this.lastCountdown = null;
     runtime.status = "holding";
     runtime.startTiming = startTiming;
-    runtime.mesh.material = this.holdMaterials[lane];
-    runtime.mesh.visible = true;
+    const mesh = this.acquireNoteMesh(runtime);
+    mesh.material = this.holdMaterials[lane];
+    mesh.visible = true;
     this.activeHolds[lane] = runtime;
     this.pulse[lane] = 1.35;
     this.synth.playHitFeedback("GOOD", lane);
@@ -955,8 +1182,7 @@ export class RhythmGame {
   completeNote(runtime, judgement, timing, details = {}) {
     const lane = runtime.note.lane;
     runtime.status = judgement.name.toLowerCase();
-    runtime.mesh.visible = false;
-    runtime.mesh.material = this.noteMaterials[lane];
+    this.releaseNoteMesh(runtime);
     if (runtime.isHold) {
       this.activeHolds[lane] = null;
       this.onHoldState?.(lane, false);
@@ -990,8 +1216,7 @@ export class RhythmGame {
   failHold(runtime, reason, timing = null) {
     const lane = runtime.note.lane;
     runtime.status = "miss";
-    runtime.mesh.visible = false;
-    runtime.mesh.material = this.noteMaterials[lane];
+    this.releaseNoteMesh(runtime);
     this.activeHolds[lane] = null;
     this.onHoldState?.(lane, false);
     this.stats.judged += 1;
@@ -1016,7 +1241,7 @@ export class RhythmGame {
       return;
     }
     runtime.status = "miss";
-    runtime.mesh.visible = false;
+    this.releaseNoteMesh(runtime);
     this.stats.judged += 1;
     this.stats.combo = 0;
     this.stats.miss += 1;
@@ -1258,22 +1483,25 @@ export class RhythmGame {
     for (let lane = 0; lane < 4; lane += 1) {
       this.pulse[lane] = Math.max(0, this.pulse[lane] - delta * 5.5);
       const holding = Boolean(this.activeHolds[lane]);
-      const pressEnergy = holding ? 1 : this.pulse[lane];
+      const pressEnergy = Math.min(1, holding ? 1 : this.pulse[lane]);
       this.padMaterials[lane].emissiveIntensity = holding
-        ? 1.55 + Math.sin(elapsed * 12) * 0.18
-        : 0.1 + pressEnergy * 2.15;
+        ? 1.58 + Math.sin(elapsed * 12) * 0.18
+        : 0.2 + pressEnergy * 1.9;
       this.padMaterials[lane].color
         .setHex(LANE_COLORS[lane])
-        .multiplyScalar(holding ? 1 : 0.14 + pressEnergy * 0.86);
-      this.padMaterials[lane].metalness = 0.66 - pressEnergy * 0.42;
-      this.padMaterials[lane].clearcoat = 0.92 - pressEnergy * 0.28;
-      const padScale = 1 + pressEnergy * 0.045;
-      this.padMeshes[lane].scale.set(padScale, 1 + pressEnergy * 0.16, padScale);
-      this.padMeshes[lane].position.y = 0.035 + pressEnergy * 0.012;
+        .lerp(new THREE.Color(0xffffff), 0.08 + pressEnergy * 0.24)
+        .multiplyScalar(holding ? 1 : 0.48 + pressEnergy * 0.52);
+      this.padMaterials[lane].metalness = 0.28 - pressEnergy * 0.12;
+      this.padMaterials[lane].roughness = 0.22 - pressEnergy * 0.08;
+      this.padMaterials[lane].clearcoat = 1;
+      const padScale = 1 - pressEnergy * 0.02;
+      this.padMeshes[lane].scale.set(padScale, 1 - pressEnergy * 0.1, padScale);
+      this.padMeshes[lane].position.y = PAD_REST_Y - pressEnergy * PAD_PRESS_TRAVEL;
     }
 
     if (this.state === "countdown" || this.state === "playing") {
       const songTime = this.synth.songTime;
+      this.canvas.dataset.songTime = songTime.toFixed(3);
       if (songTime < 0) {
         const count = Math.ceil(-songTime);
         if (count !== this.lastCountdown) {
@@ -1295,6 +1523,7 @@ export class RhythmGame {
 
       for (const runtime of this.runtimeNotes) {
         if (runtime.status === "holding") {
+          const mesh = runtime.mesh ?? this.acquireNoteMesh(runtime);
           const endTime = runtime.note.endTime ?? runtime.note.time + runtime.note.duration;
           const remaining = endTime - songTime;
           if (remaining < -GOOD_WINDOW) {
@@ -1302,10 +1531,10 @@ export class RhythmGame {
             continue;
           }
           const remainingLength = Math.max(0.12, (Math.max(0, remaining) / TRAVEL_SECONDS) * TRAVEL_DISTANCE);
-          runtime.mesh.visible = true;
-          runtime.mesh.position.z = HIT_Z - remainingLength / 2;
-          runtime.mesh.position.y = 0.24;
-          runtime.mesh.scale.z = remainingLength / NOTE_BASE_DEPTH;
+          mesh.visible = true;
+          mesh.position.z = HIT_Z - remainingLength / 2;
+          mesh.position.y = 0.24;
+          mesh.scale.z = remainingLength / NOTE_BASE_DEPTH;
           continue;
         }
         if (runtime.status !== "pending") continue;
@@ -1317,20 +1546,24 @@ export class RhythmGame {
         const approachWindow =
           this.state === "countdown" ? TRAVEL_SECONDS + COUNTDOWN_SECONDS : TRAVEL_SECONDS;
         const visible = untilHit <= approachWindow && untilHit >= -GOOD_WINDOW;
-        runtime.mesh.visible = visible;
-        if (visible) {
-          const progress = 1 - untilHit / TRAVEL_SECONDS;
-          const headZ = SPAWN_Z + progress * TRAVEL_DISTANCE;
-          if (runtime.isHold) {
-            const holdLength = (runtime.note.duration / TRAVEL_SECONDS) * TRAVEL_DISTANCE;
-            runtime.mesh.position.z = headZ - holdLength / 2;
-            runtime.mesh.scale.z = Math.max(1.3, holdLength / NOTE_BASE_DEPTH);
-          } else {
-            runtime.mesh.position.z = headZ;
-          }
-          runtime.mesh.position.y = 0.18 + Math.max(0, progress - 0.92) * 0.45;
+        if (!visible) {
+          this.releaseNoteMesh(runtime);
+          continue;
         }
+        const mesh = this.acquireNoteMesh(runtime);
+        const progress = 1 - untilHit / TRAVEL_SECONDS;
+        const headZ = SPAWN_Z + progress * TRAVEL_DISTANCE;
+        if (runtime.isHold) {
+          const holdLength = (runtime.note.duration / TRAVEL_SECONDS) * TRAVEL_DISTANCE;
+          mesh.position.z = headZ - holdLength / 2;
+          mesh.scale.z = Math.max(1.3, holdLength / NOTE_BASE_DEPTH);
+        } else {
+          mesh.position.z = headZ;
+        }
+        mesh.position.y = 0.18 + Math.max(0, progress - 0.92) * 0.45;
       }
+    } else if (this.canvas.dataset.songTime) {
+      delete this.canvas.dataset.songTime;
     }
 
     this.updateCameraShake(delta, elapsed);
@@ -1355,37 +1588,54 @@ export class RhythmGame {
     this.renderer.setPixelRatio(rendererPixelRatio);
     this.renderer.setSize(width, height, false);
     const postFxScale = is4K
-      ? 0.3
+      ? 0.45
       : isQhdPlus
-        ? 0.46
-        : width >= 1200
-          ? 0.6
-          : width >= 900
-            ? 0.66
-            : width >= 600
-              ? 0.76
-              : 0.82;
+        ? 0.7
+        : pixelCount <= 1_100_000 || width < 1200
+          ? 1
+          : 0.9;
     this.composer?.setPixelRatio(postFxScale);
     this.composer?.setSize(width, height);
+    if (this.centerRailMaterial) {
+      this.centerRailMaterial.uniforms.uViewportWidth.value = width;
+      this.centerRailMaterial.uniforms.uHalfWidthCss.value = Math.max(0.72, 0.5 / postFxScale);
+    }
     if (this.starMaterial) {
       this.starMaterial.uniforms.uPointScale.value = height * postFxScale * 0.8;
     }
     this.canvas.dataset.postFxScale = postFxScale.toFixed(2);
+    this.canvas.dataset.postFxWidth = String(Math.round(width * postFxScale));
+    this.canvas.dataset.postFxHeight = String(Math.round(height * postFxScale));
+    this.canvas.dataset.antiAliasing = this.fxaaPass?.enabled ? "fxaa" : "none";
     this.canvas.dataset.rendererPixelRatio = rendererPixelRatio.toFixed(2);
     this.canvas.dataset.renderTier = renderTier;
     const aspect = width / height;
+    const compactHeightProgress = THREE.MathUtils.clamp(
+      (CAMERA_FRAMING.compactHeightStart - height) /
+        (CAMERA_FRAMING.compactHeightStart - CAMERA_FRAMING.compactHeightEnd),
+      0,
+      1,
+    );
+    const landscapeFov = THREE.MathUtils.lerp(
+      CAMERA_FRAMING.desktopFov,
+      CAMERA_FRAMING.compactLandscapeFov,
+      compactHeightProgress,
+    );
     this.camera.aspect = aspect;
-    this.camera.fov = aspect < 0.8 ? Math.min(82, 52 * (0.8 / Math.max(aspect, 0.46))) : 52;
+    this.camera.fov =
+      aspect < 0.8
+        ? Math.min(78, CAMERA_FRAMING.desktopFov * (0.8 / Math.max(aspect, 0.46)))
+        : landscapeFov;
     this.camera.updateProjectionMatrix();
+    this.canvas.dataset.cameraFov = this.camera.fov.toFixed(2);
 
     this.camera.updateMatrixWorld();
     const lanePositions = LANE_X.map((x) => new THREE.Vector3(x, 0.22, HIT_Z).project(this.camera));
     lanePositions.forEach((position, lane) => {
       this.container.style.setProperty(`--lane-${lane}-x`, `${(position.x * 0.5 + 0.5) * 100}%`);
     });
-    this.container.style.setProperty(
-      "--hit-line-y",
-      `${(-lanePositions[0].y * 0.5 + 0.5) * 100}%`,
-    );
+    const hitLineY = (-lanePositions[0].y * 0.5 + 0.5) * 100;
+    this.container.style.setProperty("--hit-line-y", `${hitLineY}%`);
+    this.canvas.dataset.hitLineY = hitLineY.toFixed(2);
   }
 }

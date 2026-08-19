@@ -57,6 +57,7 @@ const ui = Object.fromEntries(
     "eventLog",
   ].map((id) => [id, document.getElementById(id)]),
 );
+const launchBackgroundVideo = document.querySelector(".launch-background-video");
 
 if (document.fonts) {
   Promise.all([
@@ -83,6 +84,35 @@ const judgementSpriteCrops = {
   miss: { x: 0.5, y: 0.6 },
 };
 let judgementSpriteSources = null;
+const judgementSpriteLabels = new Map();
+const judgementSpriteText = {
+  perfect: "Perfect!",
+  great: "Great",
+  good: "Good",
+  miss: "Miss",
+};
+
+function createJudgementSpriteLabel(label, sprite) {
+  const labelElement = document.createElement("span");
+  labelElement.className = "judgement-label";
+  labelElement.dataset.sprite = sprite;
+  const accessibleLabel = document.createElement("span");
+  accessibleLabel.className = "sr-only";
+  accessibleLabel.textContent = label;
+  const spriteSource = judgementSpriteSources?.[sprite];
+  const spriteImage = spriteSource?.color.cloneNode() ?? document.createElement("img");
+  spriteImage.className = "judgement-sprite-color";
+  if (!spriteSource) {
+    labelElement.dataset.atlas = "true";
+    spriteImage.src = judgementSpriteSheetUrl;
+  }
+  spriteImage.alt = "";
+  spriteImage.setAttribute("aria-hidden", "true");
+  const whiteFlash = spriteSource?.white.cloneNode() ?? spriteImage.cloneNode();
+  whiteFlash.className = "judgement-sprite-white-flash";
+  labelElement.append(accessibleLabel, spriteImage, whiteFlash);
+  return labelElement;
+}
 
 function canvasToPngBlob(canvas) {
   return new Promise((resolve) => canvas.toBlob(resolve, "image/png"));
@@ -117,13 +147,9 @@ function warmJudgementSpriteFilter(sources) {
   const warmup = document.createElement("div");
   warmup.className = "judgement-filter-warmup";
   warmup.setAttribute("aria-hidden", "true");
-  Object.entries(sources).forEach(([name, source]) => {
-    const label = document.createElement("span");
-    label.className = "judgement-label";
-    label.dataset.sprite = name;
-    const image = source.color.cloneNode();
-    image.className = "judgement-sprite-color";
-    label.append(image);
+  Object.keys(sources).forEach((name) => {
+    const label = createJudgementSpriteLabel(judgementSpriteText[name] ?? name, name);
+    judgementSpriteLabels.set(name, label);
     warmup.append(label);
   });
   document.body.append(warmup);
@@ -436,6 +462,7 @@ async function enterGame() {
     await judgementSpriteReady;
     await synth.playEnterCue();
     await playViewTransition(ui.selectionView, "view-fade-out", 260);
+    launchBackgroundVideo?.pause();
     ui.selectionView.hidden = true;
     ui.gameView.hidden = false;
     document.body.dataset.view = "game";
@@ -459,6 +486,7 @@ async function returnToSelection() {
     await playViewTransition(ui.gameView, "view-fade-out", 260);
     ui.gameView.hidden = true;
     ui.selectionView.hidden = false;
+    void launchBackgroundVideo?.play().catch(() => {});
     document.body.dataset.view = "selection";
     history.replaceState(null, "", "#selectionView");
     setTransport("ready", "채보 준비 완료");
@@ -578,28 +606,15 @@ function updateHoldState(lane, holding) {
 }
 
 function setJudgementContent(label, sprite = null) {
-  const labelElement = document.createElement("span");
-  labelElement.className = "judgement-label";
+  let labelElement;
   if (sprite) {
     ui.judgement.dataset.sprite = sprite;
-    labelElement.dataset.sprite = sprite;
-    const accessibleLabel = document.createElement("span");
-    accessibleLabel.className = "sr-only";
-    accessibleLabel.textContent = label;
-    const spriteSource = judgementSpriteSources?.[sprite];
-    const spriteImage = spriteSource?.color.cloneNode() ?? document.createElement("img");
-    spriteImage.className = "judgement-sprite-color";
-    if (!spriteSource) {
-      labelElement.dataset.atlas = "true";
-      spriteImage.src = judgementSpriteSheetUrl;
-    }
-    spriteImage.alt = "";
-    spriteImage.setAttribute("aria-hidden", "true");
-    const whiteFlash = spriteSource?.white.cloneNode() ?? spriteImage.cloneNode();
-    whiteFlash.className = "judgement-sprite-white-flash";
-    labelElement.append(accessibleLabel, spriteImage, whiteFlash);
+    labelElement = judgementSpriteLabels.get(sprite) ?? createJudgementSpriteLabel(label, sprite);
+    judgementSpriteLabels.set(sprite, labelElement);
   } else {
     delete ui.judgement.dataset.sprite;
+    labelElement = document.createElement("span");
+    labelElement.className = "judgement-label";
     labelElement.textContent = label;
   }
   ui.judgement.replaceChildren(labelElement);
