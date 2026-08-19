@@ -1,0 +1,12 @@
+.git/
+.vercel/
+.env*
+node_modules/
+dist/
+artifacts/
+output/
+docs/
+tests/
+scripts/
+src/*.cs
+/시_분.mp3
