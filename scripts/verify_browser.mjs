@@ -218,6 +218,21 @@ try {
       const root = document.documentElement;
       const canvas = document.getElementById("gameCanvas")?.getBoundingClientRect();
       const stage = document.getElementById("gameStage");
+      const touchPanel = document.querySelector(".touch-controls");
+      const touchPanelRect = touchPanel?.getBoundingClientRect();
+      const touchButtons = [...(touchPanel?.querySelectorAll("button") || [])]
+        .filter((element) => {
+          const rect = element.getBoundingClientRect();
+          return getComputedStyle(element).display !== "none" && rect.width > 0 && rect.height > 0;
+        })
+        .map((element) => {
+          const rect = element.getBoundingClientRect();
+          return {
+            lane: element.dataset.lane,
+            width: Math.round(rect.width),
+            height: Math.round(rect.height),
+          };
+        });
       const laneLabelRects = [...document.querySelectorAll(".lane-labels span")]
         .filter((element) => element.getClientRects().length > 0)
         .map((element) => {
@@ -247,6 +262,7 @@ try {
         postFxHeight: document.getElementById("gameCanvas")?.dataset.postFxHeight,
         antiAliasing: document.getElementById("gameCanvas")?.dataset.antiAliasing,
         chartNoteCount: document.getElementById("gameCanvas")?.dataset.chartNoteCount,
+        direct3dControls: document.getElementById("gameCanvas")?.dataset.direct3dControls,
         notePoolSize: document.getElementById("gameCanvas")?.dataset.notePoolSize,
         activeNoteMeshes: document.getElementById("gameCanvas")?.dataset.activeNoteMeshes,
         shadowUpdates: document.getElementById("gameCanvas")?.dataset.shadowUpdates,
@@ -264,6 +280,17 @@ try {
           stage.contains(document.getElementById("countdown")) &&
           stage.contains(document.getElementById("judgement")) &&
           stage.contains(document.getElementById("effectCombo")),
+        touchControls: {
+          visible:
+            Boolean(touchPanelRect) &&
+            getComputedStyle(touchPanel).display !== "none" &&
+            touchPanelRect.width > 0 &&
+            touchPanelRect.height > 0,
+          top: Math.round(touchPanelRect?.top || 0),
+          bottom: Math.round(touchPanelRect?.bottom || 0),
+          height: Math.round(touchPanelRect?.height || 0),
+          buttons: touchButtons,
+        },
         laneLabelRects,
         undersizedControls,
       };
@@ -315,6 +342,23 @@ try {
     }
     if (gameLayout.antiAliasing !== "fxaa") {
       errors.push(`FXAA was not enabled: ${JSON.stringify(gameLayout)}`);
+    }
+    if (gameLayout.direct3dControls !== "true") {
+      errors.push(`direct 3D controls were not retained: ${JSON.stringify(gameLayout)}`);
+    }
+    const isMobileViewport = viewport.width <= 820;
+    if (
+      isMobileViewport &&
+      (!gameLayout.touchControls.visible ||
+        gameLayout.touchControls.buttons.length !== 4 ||
+        gameLayout.touchControls.height < 120 ||
+        Math.abs(gameLayout.touchControls.bottom - viewport.height) > 1 ||
+        gameLayout.laneLabelRects.length !== 0)
+    ) {
+      errors.push(`mobile virtual keys were not anchored correctly: ${JSON.stringify(gameLayout)}`);
+    }
+    if (!isMobileViewport && gameLayout.touchControls.visible) {
+      errors.push(`desktop unexpectedly displayed mobile virtual keys: ${JSON.stringify(gameLayout)}`);
     }
     if (
       Number(gameLayout.notePoolSize) >= Number(gameLayout.chartNoteCount) ||
@@ -371,6 +415,35 @@ try {
       (gameLayout.renderTier !== "qhd" || Number(gameLayout.postFxScale) !== 0.7)
     ) {
       errors.push(`QHD render quality was not applied: ${JSON.stringify(gameLayout)}`);
+    }
+    if (viewport.name === "mobile-390") {
+      const buttonCenter = await page.$eval('.touch-controls button[data-lane="1"]', (button) => {
+        const rect = button.getBoundingClientRect();
+        return { x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 };
+      });
+      await page.mouse.move(buttonCenter.x, buttonCenter.y);
+      await page.mouse.down();
+      await page.waitForFunction(
+        () => document.querySelector('.touch-controls button[data-lane="1"]')?.dataset.pressed === "true",
+        { timeout: 1000 },
+      );
+      const pressed = await page.$eval(
+        '.touch-controls button[data-lane="1"]',
+        (button) => button.dataset.pressed,
+      );
+      await page.mouse.up();
+      await page.waitForFunction(
+        () => document.querySelector('.touch-controls button[data-lane="1"]')?.dataset.pressed === "false",
+        { timeout: 1000 },
+      );
+      const released = await page.$eval(
+        '.touch-controls button[data-lane="1"]',
+        (button) => button.dataset.pressed,
+      );
+      gameLayout.touchControls.inputCheck = { pressed, released };
+      if (pressed !== "true" || released !== "false") {
+        errors.push(`mobile virtual key did not respond to pointer input: ${JSON.stringify(gameLayout)}`);
+      }
     }
     await page.screenshot({
       path: path.join(artifactDirectory, `${viewport.name}-game.png`),
