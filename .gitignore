@@ -2,6 +2,7 @@ node_modules/
 dist/
 artifacts/
 output/
+.vercel/
 
 scripts/__pycache__/
 *.py[cod]

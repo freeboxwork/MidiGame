@@ -2,6 +2,8 @@
 
 MP3 또는 MIDI를 분석해 4레인 노트 데이터로 바꾸고, 생성된 채보를 바로 플레이할 수 있는 브라우저 리듬 게임입니다. Three.js 기반의 네온 우주 무대, 원곡 동기 재생, 실시간 판정·콤보·정확도, 키보드와 터치 입력을 지원합니다.
 
+**라이브 데모:** [neon-velocity-midi-game.vercel.app](https://neon-velocity-midi-game.vercel.app/)
+
 ![Neon Velocity 곡 선택 화면](docs/images/neon-velocity-selection.png)
 
 ## 게임 특징
