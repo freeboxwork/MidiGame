@@ -455,7 +455,6 @@ try {
       });
       await new Promise((resolve) => setTimeout(resolve, 220));
       hitFeedback = await page.evaluate((hitStartedAt, successfulHitState) => {
-        const marker = document.querySelector(".hit-confirmation");
         const judgement = document.getElementById("judgement");
         const feedbackMeta = document.getElementById("effectCombo");
         const metaRect = feedbackMeta?.getBoundingClientRect();
@@ -470,10 +469,7 @@ try {
         );
         return {
           judgement: successfulHitState.judgement,
-          markerVisible: Boolean(marker),
-          markerPositionSource: marker?.dataset.positionSource,
-          markerLeft: marker?.style.left,
-          markerTop: marker?.style.top,
+          markerVisible: Boolean(document.querySelector(".hit-confirmation")),
           score: successfulHitState.score,
           combo: successfulHitState.combo,
           hitShakeCount: successfulHitState.hitShakeCount,
@@ -513,7 +509,7 @@ try {
       ) {
         errors.push(`mirror ball flash did not follow exact judgement: ${JSON.stringify(hitFeedback)}`);
       }
-      if (!hitFeedback.markerVisible) errors.push("hit confirmation marker was not created");
+      if (hitFeedback.markerVisible) errors.push("removed hit confirmation marker was still created");
       if (hitFeedback.hitShakeCount !== 1 || hitFeedback.hitShakeLane !== "3") {
         errors.push(`successful judgement did not trigger lane-aware camera shake: ${JSON.stringify(hitFeedback)}`);
       }
@@ -532,9 +528,6 @@ try {
         hitFeedback.judgementMotionKeyframes.some((transform) => !/^scale\(/.test(transform))
       ) {
         errors.push(`judgement flash or scale-only motion was not applied: ${JSON.stringify(hitFeedback)}`);
-      }
-      if (hitFeedback.markerPositionSource !== "projected-3d") {
-        errors.push(`hit marker did not use projected 3D coordinates: ${JSON.stringify(hitFeedback)}`);
       }
       if (hitFeedback.score === "000000" || hitFeedback.combo === "000") {
         errors.push(`score feedback did not update: ${JSON.stringify(hitFeedback)}`);
@@ -660,7 +653,6 @@ try {
           { timeout: 1000 },
         );
         const releasedState = await page.evaluate(() => {
-          const marker = document.querySelector(".hit-confirmation");
           return {
             judgement: document.getElementById("judgement")?.textContent,
             laneF: document.querySelector('[data-lane="1"]')?.dataset.holding,
@@ -668,7 +660,6 @@ try {
             score: document.getElementById("scoreValue")?.textContent,
             combo: document.getElementById("comboValue")?.textContent,
             metaText: document.getElementById("effectCombo")?.textContent,
-            markerPositionSource: marker?.dataset.positionSource,
             songTime: document.getElementById("gameCanvas")?.dataset.songTime,
           };
         });

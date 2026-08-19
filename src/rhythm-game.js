@@ -172,11 +172,17 @@ export class RhythmGame {
     this.cameraShakeStrength = 0;
     this.cameraShakeLaneDirection = 0;
     this.hitShakeCount = 0;
-    this.reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    this.hitEffectCount = 0;
+    this.pointerRaycaster = new THREE.Raycaster();
+    this.pointerPosition = new THREE.Vector2();
+    this.activePointerLanes = new Map();
+    this.reducedMotion = false;
+    this.canvas.dataset.gameMotionPolicy = "always";
     this.stats = this.createStats();
     this.lastUiUpdate = 0;
 
     this.createScene();
+    this.bindPointerControls();
     this.resizeObserver = new ResizeObserver(() => this.resize());
     this.resizeObserver.observe(container);
     window.addEventListener("keydown", (event) => this.handleKeyDown(event));
@@ -474,6 +480,7 @@ export class RhythmGame {
       frame.receiveShadow = true;
       const pad = new THREE.Mesh(padBaseGeometry, this.padMaterials[lane]);
       pad.position.y = PAD_REST_Y;
+      pad.userData.lane = lane;
       pad.castShadow = true;
       pad.receiveShadow = true;
       receptor.add(aura, shadowBase, frame, pad);
@@ -1017,6 +1024,7 @@ export class RhythmGame {
       effect.active = false;
       effect.group.visible = false;
     }
+    this.activePointerLanes.clear();
     this.cameraShakeRemaining = 0;
     this.cameraShakeCooldown = 0;
     this.camera.position.copy(this.cameraBase);
@@ -1082,6 +1090,51 @@ export class RhythmGame {
     this.canvas.dataset.activeNoteMeshes = String(
       this.noteMeshPool.length - this.freeNoteMeshes.length,
     );
+  }
+
+  bindPointerControls() {
+    this.canvas.dataset.direct3dControls = "true";
+    this.canvas.addEventListener("pointerdown", (event) => this.handlePointerDown(event));
+    this.canvas.addEventListener("pointerup", (event) => this.handlePointerRelease(event));
+    this.canvas.addEventListener("pointercancel", (event) => this.handlePointerRelease(event));
+    this.canvas.addEventListener("lostpointercapture", (event) => this.handlePointerRelease(event));
+  }
+
+  getPointerLane(event) {
+    const rect = this.canvas.getBoundingClientRect();
+    if (rect.width < 2 || rect.height < 2) return null;
+
+    this.pointerPosition.set(
+      ((event.clientX - rect.left) / rect.width) * 2 - 1,
+      -((event.clientY - rect.top) / rect.height) * 2 + 1,
+    );
+    this.pointerRaycaster.setFromCamera(this.pointerPosition, this.camera);
+    const intersection = this.pointerRaycaster.intersectObjects(this.padMeshes, false)[0];
+    return intersection ? intersection.object.userData.lane : null;
+  }
+
+  handlePointerDown(event) {
+    const lane = this.getPointerLane(event);
+    if (lane == null || [...this.activePointerLanes.values()].includes(lane)) return;
+
+    event.preventDefault();
+    this.activePointerLanes.set(event.pointerId, lane);
+    try {
+      this.canvas.setPointerCapture(event.pointerId);
+    } catch {
+      // Some embedded mobile browsers do not expose pointer capture.
+    }
+    this.canvas.dataset.lastPointerLane = String(lane);
+    this.hitLane(lane);
+  }
+
+  handlePointerRelease(event) {
+    const lane = this.activePointerLanes.get(event.pointerId);
+    if (lane == null) return;
+
+    event.preventDefault();
+    this.activePointerLanes.delete(event.pointerId);
+    this.releaseLane(lane);
   }
 
   handleKeyDown(event) {
@@ -1386,13 +1439,19 @@ export class RhythmGame {
   createHitEffect(lane, judgement) {
     const profile = HIT_EFFECT_PROFILES[judgement];
     if (!profile) return;
-    const shardCount = this.reducedMotion ? 0 : profile.shards;
+    const shardCount = this.reducedMotion
+      ? Math.max(3, Math.round(profile.shards * 0.45))
+      : profile.shards;
+    const isNarrowViewport = this.container.clientWidth <= 820;
+    const motionScale = this.reducedMotion ? 0.38 : 1;
     const color = LANE_COLORS[lane];
     const effect = this.hitEffects.find((candidate) => !candidate.active) ?? this.hitEffects[0];
     effect.active = true;
     effect.age = 0;
-    effect.duration = profile.duration;
+    effect.duration = this.reducedMotion ? profile.duration * 0.72 : profile.duration;
     effect.intensity = profile.intensity;
+    effect.motionScale = motionScale;
+    effect.shardScale = isNarrowViewport ? 1.28 : 1;
     effect.group.visible = true;
     effect.group.position.set(LANE_X[lane], 0.22, HIT_Z);
     effect.ring.position.y = 0;
@@ -1402,19 +1461,22 @@ export class RhythmGame {
     effect.shardMaterial.color.setHex(color);
     effect.shardMaterial.opacity = profile.intensity;
     effect.shards.count = shardCount;
+    this.hitEffectCount += 1;
+    this.canvas.dataset.hitEffectCount = String(this.hitEffectCount);
+    this.canvas.dataset.hitShardCount = String(shardCount);
 
     for (let index = 0; index < shardCount; index += 1) {
       const angle = (index / shardCount) * Math.PI * 2 + Math.random() * 0.25;
-      const speed = (1.8 + Math.random() * 2.1) * profile.intensity;
+      const speed = (1.8 + Math.random() * 2.1) * profile.intensity * motionScale;
       const state = effect.shardStates[index];
       state.position.set(0, 0, 0);
       state.rotation.set(Math.random() * Math.PI, angle, Math.random() * Math.PI);
       state.velocity.set(
         Math.cos(angle) * speed,
-        1.1 + Math.random() * 1.8,
+        (1.1 + Math.random() * 1.8) * motionScale,
         Math.sin(angle) * speed * 0.72,
       );
-      state.scale = 0.7 + profile.intensity * 0.6;
+      state.scale = (0.7 + profile.intensity * 0.6) * effect.shardScale;
     }
     this.updateHitShardMatrices(effect);
   }
@@ -1425,18 +1487,18 @@ export class RhythmGame {
       effect.age += delta;
       const progress = Math.min(1, effect.age / effect.duration);
       const fade = (1 - progress) * effect.intensity;
-      effect.ring.scale.setScalar(0.55 + progress * 4.2);
-      effect.ring.position.y = progress * 0.12;
+      effect.ring.scale.setScalar(0.55 + progress * 4.2 * effect.motionScale);
+      effect.ring.position.y = progress * 0.12 * effect.motionScale;
       effect.ringMaterial.opacity = fade;
       effect.shardMaterial.opacity = fade * 0.9;
 
       for (let index = 0; index < effect.shards.count; index += 1) {
         const state = effect.shardStates[index];
         state.position.addScaledVector(state.velocity, delta);
-        state.velocity.y -= 5.4 * delta;
-        state.rotation.x += delta * 8;
-        state.rotation.z += delta * 11;
-        state.scale = 0.7 + fade * 0.6;
+        state.velocity.y -= 5.4 * delta * effect.motionScale;
+        state.rotation.x += delta * 8 * effect.motionScale;
+        state.rotation.z += delta * 11 * effect.motionScale;
+        state.scale = (0.7 + fade * 0.6) * effect.shardScale;
       }
       this.updateHitShardMatrices(effect);
 
