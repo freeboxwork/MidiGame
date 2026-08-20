@@ -100,7 +100,14 @@ const TRACK_WARP_GLSL = `
       cos(phase) * 0.062 +
       sin(distanceFromAnchor * 0.061 - uTrackWarpTime * 0.17 + 0.4) * 0.028
     ) * influence * strength;
-    return vec3(lateral, lift + worldPosition.x * bank, 0.0);
+    float curveRotation = uTrackWarpRotation * influence;
+    float rotationCos = cos(curveRotation);
+    float rotationSin = sin(curveRotation);
+    vec2 rotatedCurve = vec2(
+      lateral * rotationCos - lift * rotationSin,
+      lateral * rotationSin + lift * rotationCos
+    );
+    return vec3(rotatedCurve.x, rotatedCurve.y + worldPosition.x * bank, 0.0);
   }
 `;
 
@@ -109,6 +116,7 @@ function createTrackWarpUniforms() {
     uTrackWarpTime: { value: 0 },
     uTrackWarpStrength: { value: 0.92 },
     uTrackWarpPulse: { value: 0 },
+    uTrackWarpRotation: { value: 0 },
   };
 }
 
@@ -128,6 +136,7 @@ function applyTrackWarp(material, warpUniforms, options = {}) {
          uniform float uTrackWarpTime;
          uniform float uTrackWarpStrength;
          uniform float uTrackWarpPulse;
+         uniform float uTrackWarpRotation;
          ${varyingDeclaration}
          ${TRACK_WARP_GLSL}`,
       )
@@ -156,7 +165,7 @@ function applyTrackWarp(material, warpUniforms, options = {}) {
     }
   };
   material.customProgramCacheKey = () =>
-    `track-warp-v2-${usesDepthFade ? `${fadeStart}-${fadeEnd}` : "solid"}`;
+    `track-warp-v3-${usesDepthFade ? `${fadeStart}-${fadeEnd}` : "solid"}`;
   return material;
 }
 
@@ -183,6 +192,7 @@ function createSoftNoteGlowMaterial(color, intensity = 1, warpUniforms = null) {
         uniform float uTrackWarpTime;
         uniform float uTrackWarpStrength;
         uniform float uTrackWarpPulse;
+        uniform float uTrackWarpRotation;
         varying vec2 vGlowUv;
         ${TRACK_WARP_GLSL}
         void main() {
@@ -264,7 +274,11 @@ export class RhythmGame {
     this.reducedMotion = false;
     this.canvas.dataset.gameMotionPolicy = "always";
     this.trackWarpUniforms = createTrackWarpUniforms();
+    this.trackWarpPhase = 0;
+    this.trackWarpSpeedScale = 0.18;
+    this.trackWarpRotation = 0;
     this.canvas.dataset.trackWarp = "dynamic";
+    this.canvas.dataset.trackWarpAudioReactive = "true";
     this.stats = this.createStats();
     this.lastUiUpdate = 0;
 
@@ -502,6 +516,7 @@ export class RhythmGame {
         uniform float uTrackWarpTime;
         uniform float uTrackWarpStrength;
         uniform float uTrackWarpPulse;
+        uniform float uTrackWarpRotation;
         varying float vWorldZ;
         ${TRACK_WARP_GLSL}
         void main() {
@@ -1091,21 +1106,74 @@ export class RhythmGame {
     }
   }
 
-  updateTrackWarp(elapsed) {
+  updateTrackWarp(delta) {
+    const trackIsLive = this.state === "playing";
     const liveEnergy =
-      this.state === "playing"
+      trackIsLive
         ? THREE.MathUtils.clamp(
             this.smoothedAudioEnergy.overall * 0.72 + this.smoothedAudioEnergy.bass * 0.34,
             0,
             1,
           )
         : 0;
-    const motionScale = this.reducedMotion ? 0.14 : 1;
     const strength = this.reducedMotion ? 0.28 : 0.92 + liveEnergy * 0.16;
-    const pulse = this.reducedMotion ? 0 : liveEnergy;
-    this.trackWarpUniforms.uTrackWarpTime.value = elapsed * motionScale;
+    const pulse = this.reducedMotion
+      ? 0
+      : THREE.MathUtils.clamp(
+          this.smoothedAudioEnergy.bass * 0.62 +
+            this.smoothedAudioEnergy.mid * 0.28 +
+            this.smoothedAudioEnergy.high * 0.1,
+          0,
+          1,
+        );
+    const targetSpeed = this.reducedMotion
+      ? 0.07
+      : trackIsLive
+        ? THREE.MathUtils.clamp(
+            0.42 +
+              this.tunnelSpeedScale * 0.64 +
+              this.smoothedAudioEnergy.mid * 0.56 +
+              this.smoothedAudioEnergy.high * 0.18,
+            0.82,
+            3.8,
+          )
+        : 0.18;
+    const speedResponse = 1 - Math.exp(
+      -delta * (this.tunnelBassRise > 0.055 ? 11 : trackIsLive ? 3.1 : 2.2),
+    );
+    this.trackWarpSpeedScale += (targetSpeed - this.trackWarpSpeedScale) * speedResponse;
+    this.trackWarpPhase += delta * this.trackWarpSpeedScale;
+
+    const rotationAmplitude = this.reducedMotion
+      ? 0.025
+      : trackIsLive
+        ? 0.075 +
+          this.smoothedAudioEnergy.mid * 0.13 +
+          this.smoothedAudioEnergy.high * 0.055
+        : 0.055;
+    const eqRotationBias = trackIsLive
+      ? (this.smoothedAudioEnergy.mid - this.smoothedAudioEnergy.bass) * 0.045
+      : 0;
+    const targetRotation = THREE.MathUtils.clamp(
+      Math.sin(this.trackWarpPhase * 0.34 + this.smoothedAudioEnergy.mid * 0.8) *
+        rotationAmplitude +
+        eqRotationBias,
+      -0.26,
+      0.26,
+    );
+    const rotationResponse = 1 - Math.exp(
+      -delta * (trackIsLive ? 2.4 + this.smoothedAudioEnergy.high * 1.8 : 1.5),
+    );
+    this.trackWarpRotation += (targetRotation - this.trackWarpRotation) * rotationResponse;
+
+    this.trackWarpUniforms.uTrackWarpTime.value = this.trackWarpPhase;
     this.trackWarpUniforms.uTrackWarpStrength.value = strength;
     this.trackWarpUniforms.uTrackWarpPulse.value = pulse;
+    this.trackWarpUniforms.uTrackWarpRotation.value = this.trackWarpRotation;
+    this.canvas.trackWarpSpeedScale = this.trackWarpSpeedScale;
+    this.canvas.trackWarpRotation = this.trackWarpRotation;
+    this.canvas.dataset.trackWarpSpeed = this.trackWarpSpeedScale.toFixed(2);
+    this.canvas.dataset.trackWarpRotation = this.trackWarpRotation.toFixed(3);
     this.canvas.dataset.trackWarpStrength = strength.toFixed(2);
     this.canvas.dataset.trackWarpPulse = pulse.toFixed(2);
   }
@@ -1687,7 +1755,7 @@ export class RhythmGame {
 
     this.updateHitEffects(delta);
     this.updateCosmicEnvironment(delta, elapsed);
-    this.updateTrackWarp(elapsed);
+    this.updateTrackWarp(delta);
 
     for (let lane = 0; lane < 4; lane += 1) {
       this.pulse[lane] = Math.max(0, this.pulse[lane] - delta * 5.5);
