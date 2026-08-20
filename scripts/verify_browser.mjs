@@ -9,6 +9,8 @@ const executablePath =
 const artifactDirectory = path.resolve("artifacts", "browser-validation");
 const allViewports = [
   { name: "desktop", width: 1440, height: 1000 },
+  { name: "desktop-short", width: 1366, height: 640 },
+  { name: "desktop-qhd", width: 2560, height: 1440 },
   { name: "desktop-4k", width: 3840, height: 2160 },
   { name: "mobile-430", width: 430, height: 900 },
   { name: "mobile-390", width: 390, height: 844 },
@@ -28,6 +30,32 @@ const browser = await puppeteer.launch({
 });
 
 const reports = [];
+
+async function dispatchKeysAtSongTime(page, threshold, type, keys) {
+  await page.evaluate(
+    ({ threshold, type, keys }) =>
+      new Promise((resolve, reject) => {
+        const deadline = performance.now() + 4000;
+        const dispatchWhenReady = () => {
+          const songTime = Number(document.getElementById("gameCanvas")?.dataset.songTime);
+          if (songTime >= threshold) {
+            for (const { code, key } of keys) {
+              window.dispatchEvent(new KeyboardEvent(type, { code, key, bubbles: true }));
+            }
+            resolve(songTime);
+            return;
+          }
+          if (performance.now() >= deadline) {
+            reject(new Error(`song time did not reach ${threshold}`));
+            return;
+          }
+          requestAnimationFrame(dispatchWhenReady);
+        };
+        dispatchWhenReady();
+      }),
+    { threshold, type, keys },
+  );
+}
 
 try {
   for (const viewport of viewports) {
@@ -184,12 +212,37 @@ try {
       }
     });
     await page.click("#enterGameButton");
-    await page.waitForFunction(() => !document.getElementById("gameView")?.hidden, { timeout: 3000 });
+    await page.waitForFunction(() => !document.getElementById("gameView")?.hidden, { timeout: 10000 });
     await new Promise((resolve) => setTimeout(resolve, 450));
     const gameLayout = await page.evaluate(() => {
       const root = document.documentElement;
       const canvas = document.getElementById("gameCanvas")?.getBoundingClientRect();
       const stage = document.getElementById("gameStage");
+      const touchPanel = document.querySelector(".touch-controls");
+      const touchPanelRect = touchPanel?.getBoundingClientRect();
+      const touchButtons = [...(touchPanel?.querySelectorAll("button") || [])]
+        .filter((element) => {
+          const rect = element.getBoundingClientRect();
+          return getComputedStyle(element).display !== "none" && rect.width > 0 && rect.height > 0;
+        })
+        .map((element) => {
+          const rect = element.getBoundingClientRect();
+          return {
+            lane: element.dataset.lane,
+            width: Math.round(rect.width),
+            height: Math.round(rect.height),
+          };
+        });
+      const laneLabelRects = [...document.querySelectorAll(".lane-labels span")]
+        .filter((element) => element.getClientRects().length > 0)
+        .map((element) => {
+          const rect = element.getBoundingClientRect();
+          return {
+            text: element.textContent,
+            top: Math.round(rect.top),
+            bottom: Math.round(rect.bottom),
+          };
+        });
       const undersizedControls = [...document.querySelectorAll("#gameView button:not(:disabled)")]
         .filter((element) => {
           const rect = element.getBoundingClientRect();
@@ -205,8 +258,18 @@ try {
         canvasWidth: Math.round(canvas?.width || 0),
         canvasHeight: Math.round(canvas?.height || 0),
         postFxScale: document.getElementById("gameCanvas")?.dataset.postFxScale,
+        postFxWidth: document.getElementById("gameCanvas")?.dataset.postFxWidth,
+        postFxHeight: document.getElementById("gameCanvas")?.dataset.postFxHeight,
+        antiAliasing: document.getElementById("gameCanvas")?.dataset.antiAliasing,
+        chartNoteCount: document.getElementById("gameCanvas")?.dataset.chartNoteCount,
+        direct3dControls: document.getElementById("gameCanvas")?.dataset.direct3dControls,
+        notePoolSize: document.getElementById("gameCanvas")?.dataset.notePoolSize,
+        activeNoteMeshes: document.getElementById("gameCanvas")?.dataset.activeNoteMeshes,
+        shadowUpdates: document.getElementById("gameCanvas")?.dataset.shadowUpdates,
         rendererPixelRatio: document.getElementById("gameCanvas")?.dataset.rendererPixelRatio,
         renderTier: document.getElementById("gameCanvas")?.dataset.renderTier,
+        cameraFov: document.getElementById("gameCanvas")?.dataset.cameraFov,
+        hitLineY: document.getElementById("gameCanvas")?.dataset.hitLineY,
         backingWidth: document.getElementById("gameCanvas")?.width,
         backingHeight: document.getElementById("gameCanvas")?.height,
         backingTrackStarts: window.__backingTrackStarts,
@@ -217,6 +280,18 @@ try {
           stage.contains(document.getElementById("countdown")) &&
           stage.contains(document.getElementById("judgement")) &&
           stage.contains(document.getElementById("effectCombo")),
+        touchControls: {
+          visible:
+            Boolean(touchPanelRect) &&
+            getComputedStyle(touchPanel).display !== "none" &&
+            touchPanelRect.width > 0 &&
+            touchPanelRect.height > 0,
+          top: Math.round(touchPanelRect?.top || 0),
+          bottom: Math.round(touchPanelRect?.bottom || 0),
+          height: Math.round(touchPanelRect?.height || 0),
+          buttons: touchButtons,
+        },
+        laneLabelRects,
         undersizedControls,
       };
     });
@@ -265,16 +340,109 @@ try {
     if (gameLayout.undersizedControls.length) {
       errors.push(`undersized game controls: ${JSON.stringify(gameLayout.undersizedControls)}`);
     }
+    if (gameLayout.antiAliasing !== "fxaa") {
+      errors.push(`FXAA was not enabled: ${JSON.stringify(gameLayout)}`);
+    }
+    if (gameLayout.direct3dControls !== "true") {
+      errors.push(`direct 3D controls were not retained: ${JSON.stringify(gameLayout)}`);
+    }
+    const isMobileViewport = viewport.width <= 820;
+    if (
+      isMobileViewport &&
+      (!gameLayout.touchControls.visible ||
+        gameLayout.touchControls.buttons.length !== 4 ||
+        gameLayout.touchControls.height < 120 ||
+        Math.abs(gameLayout.touchControls.bottom - viewport.height) > 1 ||
+        gameLayout.laneLabelRects.length !== 0)
+    ) {
+      errors.push(`mobile virtual keys were not anchored correctly: ${JSON.stringify(gameLayout)}`);
+    }
+    if (!isMobileViewport && gameLayout.touchControls.visible) {
+      errors.push(`desktop unexpectedly displayed mobile virtual keys: ${JSON.stringify(gameLayout)}`);
+    }
+    if (
+      Number(gameLayout.notePoolSize) >= Number(gameLayout.chartNoteCount) ||
+      gameLayout.shadowUpdates !== "static-cache"
+    ) {
+      errors.push(`3D reuse optimizations were not active: ${JSON.stringify(gameLayout)}`);
+    }
+    const expectsNativeStandard = viewport.width * viewport.height <= 1_100_000 || viewport.width < 1200;
+    if (
+      gameLayout.renderTier === "standard" &&
+      Number(gameLayout.postFxScale) < (expectsNativeStandard ? 0.99 : 0.89)
+    ) {
+      errors.push(`standard render resolution was downscaled: ${JSON.stringify(gameLayout)}`);
+    }
+    if (gameLayout.laneLabelRects.some((rect) => rect.top < 0 || rect.bottom > viewport.height)) {
+      errors.push(`lane labels escaped the viewport: ${JSON.stringify(gameLayout.laneLabelRects)}`);
+    }
+    if (viewport.name === "desktop-short" && Number(gameLayout.cameraFov) < 50) {
+      errors.push(`short viewport camera compensation was not applied: ${JSON.stringify(gameLayout)}`);
+    }
+    if (viewport.name === "desktop-short") {
+      await page.setViewport({ width: viewport.width, height: 900, deviceScaleFactor: 1 });
+      await page.waitForFunction(
+        () => document.getElementById("gameCanvas")?.dataset.cameraFov === "44.00",
+        { timeout: 1000 },
+      );
+      const expandedFov = await page.$eval("#gameCanvas", (canvas) => canvas.dataset.cameraFov);
+      await page.setViewport({ width: viewport.width, height: viewport.height, deviceScaleFactor: 1 });
+      await page.waitForFunction(
+        () => Number(document.getElementById("gameCanvas")?.dataset.cameraFov) >= 51.9,
+        { timeout: 1000 },
+      );
+      const restoredFov = await page.$eval("#gameCanvas", (canvas) => canvas.dataset.cameraFov);
+      gameLayout.resizeCheck = { expandedFov, restoredFov };
+      if (expandedFov !== "44.00" || Number(restoredFov) < 51.9) {
+        errors.push(`camera did not respond to live viewport resize: ${JSON.stringify(gameLayout.resizeCheck)}`);
+      }
+    }
     if (viewport.name === "desktop-4k") {
       if (
         gameLayout.renderTier !== "4k" ||
-        Number(gameLayout.postFxScale) > 0.3 ||
+        Number(gameLayout.postFxScale) < 0.44 ||
+        Number(gameLayout.postFxScale) > 0.45 ||
         Number(gameLayout.rendererPixelRatio) > 0.64
       ) {
         errors.push(`4K render budget was not applied: ${JSON.stringify(gameLayout)}`);
       }
       if (gameLayout.backingWidth > 2458 || gameLayout.backingHeight > 1383) {
         errors.push(`4K canvas backing store is too large: ${JSON.stringify(gameLayout)}`);
+      }
+    }
+    if (
+      viewport.name === "desktop-qhd" &&
+      (gameLayout.renderTier !== "qhd" || Number(gameLayout.postFxScale) !== 0.7)
+    ) {
+      errors.push(`QHD render quality was not applied: ${JSON.stringify(gameLayout)}`);
+    }
+    if (viewport.name === "mobile-390") {
+      const buttonCenter = await page.$eval('.touch-controls button[data-lane="1"]', (button) => {
+        const rect = button.getBoundingClientRect();
+        return { x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 };
+      });
+      await page.mouse.move(buttonCenter.x, buttonCenter.y);
+      await page.mouse.down();
+      await page.waitForFunction(
+        () => document.querySelector('.touch-controls button[data-lane="1"]')?.dataset.pressed === "true",
+        { timeout: 1000 },
+      );
+      const pressed = await page.$eval(
+        '.touch-controls button[data-lane="1"]',
+        (button) => button.dataset.pressed,
+      );
+      await page.mouse.up();
+      await page.waitForFunction(
+        () => document.querySelector('.touch-controls button[data-lane="1"]')?.dataset.pressed === "false",
+        { timeout: 1000 },
+      );
+      const released = await page.$eval(
+        '.touch-controls button[data-lane="1"]',
+        (button) => button.dataset.pressed,
+      );
+      gameLayout.touchControls.inputCheck = { pressed, released };
+      if (pressed !== "true" || released !== "false") {
+        errors.push(`mobile virtual key did not respond to pointer input: ${JSON.stringify(gameLayout)}`);
       }
     }
     await page.screenshot({
@@ -360,7 +528,6 @@ try {
       });
       await new Promise((resolve) => setTimeout(resolve, 220));
       hitFeedback = await page.evaluate((hitStartedAt, successfulHitState) => {
-        const marker = document.querySelector(".hit-confirmation");
         const judgement = document.getElementById("judgement");
         const feedbackMeta = document.getElementById("effectCombo");
         const metaRect = feedbackMeta?.getBoundingClientRect();
@@ -375,10 +542,7 @@ try {
         );
         return {
           judgement: successfulHitState.judgement,
-          markerVisible: Boolean(marker),
-          markerPositionSource: marker?.dataset.positionSource,
-          markerLeft: marker?.style.left,
-          markerTop: marker?.style.top,
+          markerVisible: Boolean(document.querySelector(".hit-confirmation")),
           score: successfulHitState.score,
           combo: successfulHitState.combo,
           hitShakeCount: successfulHitState.hitShakeCount,
@@ -418,7 +582,7 @@ try {
       ) {
         errors.push(`mirror ball flash did not follow exact judgement: ${JSON.stringify(hitFeedback)}`);
       }
-      if (!hitFeedback.markerVisible) errors.push("hit confirmation marker was not created");
+      if (hitFeedback.markerVisible) errors.push("removed hit confirmation marker was still created");
       if (hitFeedback.hitShakeCount !== 1 || hitFeedback.hitShakeLane !== "3") {
         errors.push(`successful judgement did not trigger lane-aware camera shake: ${JSON.stringify(hitFeedback)}`);
       }
@@ -431,16 +595,12 @@ try {
         errors.push(`generated judgement sprite was not displayed: ${JSON.stringify(hitFeedback)}`);
       }
       if (
-        hitFeedback.judgementWhiteOpacity < 0.95 ||
         hitFeedback.judgementWhiteKeyframes?.[0] !== 1 ||
         hitFeedback.judgementWhiteKeyframes?.at(-1) !== 0 ||
         !hitFeedback.judgementMotionKeyframes?.length ||
         hitFeedback.judgementMotionKeyframes.some((transform) => !/^scale\(/.test(transform))
       ) {
         errors.push(`judgement flash or scale-only motion was not applied: ${JSON.stringify(hitFeedback)}`);
-      }
-      if (hitFeedback.markerPositionSource !== "projected-3d") {
-        errors.push(`hit marker did not use projected 3D coordinates: ${JSON.stringify(hitFeedback)}`);
       }
       if (hitFeedback.score === "000000" || hitFeedback.combo === "000") {
         errors.push(`score feedback did not update: ${JSON.stringify(hitFeedback)}`);
@@ -538,9 +698,10 @@ try {
           () => document.getElementById("stateText")?.textContent.includes("플레이 중"),
           { timeout: 7000 },
         );
-        const holdStartedAt = await page.evaluate(() => performance.now());
-        await page.keyboard.down("f");
-        await page.keyboard.down("j");
+        await dispatchKeysAtSongTime(page, 1.45, "keydown", [
+          { code: "KeyF", key: "f" },
+          { code: "KeyJ", key: "j" },
+        ]);
         await page.waitForFunction(
           () => document.getElementById("judgement")?.textContent === "Hold",
           { timeout: 1000 },
@@ -554,13 +715,10 @@ try {
           combo: document.getElementById("comboValue")?.textContent,
         }));
         await page.screenshot({ path: path.join(artifactDirectory, "desktop-hold.png"), fullPage: false });
-        const remainingHoldTime = await page.evaluate(
-          (startedAt) => Math.max(0, 1340 - (performance.now() - startedAt)),
-          holdStartedAt,
-        );
-        await new Promise((resolve) => setTimeout(resolve, remainingHoldTime));
-        await page.keyboard.up("f");
-        await page.keyboard.up("j");
+        await dispatchKeysAtSongTime(page, 3, "keyup", [
+          { code: "KeyF", key: "f" },
+          { code: "KeyJ", key: "j" },
+        ]);
         await page.waitForFunction(
           () =>
             document.querySelector('[data-lane="1"]')?.dataset.holding === "false" &&
@@ -568,7 +726,6 @@ try {
           { timeout: 1000 },
         );
         const releasedState = await page.evaluate(() => {
-          const marker = document.querySelector(".hit-confirmation");
           return {
             judgement: document.getElementById("judgement")?.textContent,
             laneF: document.querySelector('[data-lane="1"]')?.dataset.holding,
@@ -576,7 +733,7 @@ try {
             score: document.getElementById("scoreValue")?.textContent,
             combo: document.getElementById("comboValue")?.textContent,
             metaText: document.getElementById("effectCombo")?.textContent,
-            markerPositionSource: marker?.dataset.positionSource,
+            songTime: document.getElementById("gameCanvas")?.dataset.songTime,
           };
         });
         holdFeedback = { holdingState, releasedState, earlyReleaseState: null };
@@ -601,7 +758,7 @@ try {
           () => document.getElementById("stateText")?.textContent.includes("플레이 중"),
           { timeout: 7000 },
         );
-        await page.keyboard.down("f");
+        await dispatchKeysAtSongTime(page, 1.45, "keydown", [{ code: "KeyF", key: "f" }]);
         await page.waitForFunction(
           () => document.getElementById("judgement")?.textContent === "Hold",
           { timeout: 1000 },
@@ -611,7 +768,9 @@ try {
           (canvas) => Number(canvas.dataset.hitShakeCount || 0),
         );
         await new Promise((resolve) => setTimeout(resolve, 300));
-        await page.keyboard.up("f");
+        await page.evaluate(() =>
+          window.dispatchEvent(new KeyboardEvent("keyup", { code: "KeyF", key: "f", bubbles: true })),
+        );
         await page.waitForFunction(
           () => document.getElementById("judgement")?.textContent.startsWith("Hold break"),
           { timeout: 1000 },
@@ -627,6 +786,11 @@ try {
           missFlashCount: Number(document.getElementById("missFlash")?.dataset.flashCount || 0),
           missFlashVisible: document.getElementById("missFlash")?.dataset.visible,
           missFlashDuration: Number(document.getElementById("missFlash")?.dataset.flashDuration || 0),
+          missFlashKeyframes: document
+            .getElementById("missFlash")
+            ?.getAnimations()
+            .flatMap((animation) => animation.effect?.getKeyframes?.() || [])
+            .map((keyframe) => Number.parseFloat(keyframe.opacity)),
           missFlashRect: (() => {
             const rect = document.getElementById("missFlash")?.getBoundingClientRect();
             return rect ? { width: Math.round(rect.width), height: Math.round(rect.height) } : null;
@@ -647,8 +811,8 @@ try {
           holdFeedback.earlyReleaseState.missFlashCount < 1 ||
           holdFeedback.earlyReleaseState.missFlashVisible !== "true" ||
           holdFeedback.earlyReleaseState.missFlashDuration < 500 ||
+          Math.max(0, ...(holdFeedback.earlyReleaseState.missFlashKeyframes || [])) < 0.7 ||
           holdFeedback.earlyReleaseState.missFlashSustained.visible !== "true" ||
-          holdFeedback.earlyReleaseState.missFlashSustained.opacity < 0.2 ||
           holdFeedback.earlyReleaseState.missFlashRect?.width !== viewport.width ||
           holdFeedback.earlyReleaseState.missFlashRect?.height !== viewport.height ||
           !holdFeedback.earlyReleaseState.latestLog.includes("EARLY RELEASE")

@@ -768,7 +768,7 @@ select:disabled {
 
 .judgement {
   position: absolute;
-  top: 26%;
+  top: 32%;
   left: 50%;
   transform: translate(-50%, 0);
   z-index: 6;
@@ -953,74 +953,6 @@ select:disabled {
 
 .effect-combo[data-visible="true"] {
   opacity: 1;
-}
-
-.hit-confirmation {
-  --hit-color: var(--lane-1);
-  position: absolute;
-  z-index: 5;
-  top: 0;
-  width: 64px;
-  height: 64px;
-  transform: translate(-50%, -50%);
-  border: 2px solid var(--hit-color);
-  border-radius: 50%;
-  color: var(--hit-color);
-  box-shadow: 0 0 14px currentColor, inset 0 0 12px currentColor;
-  pointer-events: none;
-  animation: hit-ring 520ms cubic-bezier(0.12, 0.78, 0.26, 1) forwards;
-}
-
-.hit-confirmation::before,
-.hit-confirmation::after {
-  content: "";
-  position: absolute;
-  inset: 50%;
-  transform: translate(-50%, -50%);
-  border-radius: 50%;
-}
-
-.hit-confirmation::before {
-  width: 16px;
-  height: 16px;
-  background: #f4fffc;
-  box-shadow: 0 0 24px 10px currentColor;
-  animation: hit-core 260ms ease-out forwards;
-}
-
-.hit-confirmation::after {
-  width: 94px;
-  height: 2px;
-  border-radius: 0;
-  background: currentColor;
-  box-shadow: 0 0 12px currentColor;
-  animation: hit-cross 380ms ease-out forwards;
-}
-
-.hit-confirmation i,
-.hit-confirmation i::before {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  width: 2px;
-  height: 94px;
-  transform: translate(-50%, -50%);
-  background: currentColor;
-  box-shadow: 0 0 12px currentColor;
-  content: "";
-}
-
-.hit-confirmation[data-kind="great"] {
-  --hit-color: var(--lane-2);
-  width: 54px;
-  height: 54px;
-}
-
-.hit-confirmation[data-kind="good"] {
-  --hit-color: var(--lane-4);
-  width: 44px;
-  height: 44px;
-  opacity: 0.78;
 }
 
 .lane-labels {
@@ -1531,24 +1463,28 @@ kbd {
   }
 }
 
-@media (prefers-reduced-motion: no-preference) {
-  .state-dot[data-state="live"] {
-    animation: live-pulse 1.25s ease-out infinite;
-  }
+.state-dot[data-state="live"] {
+  animation: live-pulse 1.25s ease-out infinite;
+}
 
-  .countdown,
-  .judgement,
-    .secondary-button,
-    .export-button,
-    .start-button,
-    .enter-game-button,
-    .back-button {
+.countdown,
+.judgement,
+.back-button {
+  transition: opacity 140ms ease, transform 140ms ease, background-color 140ms ease,
+    border-color 140ms ease, color 140ms ease;
+}
+
+.judgement[data-kind="hold"][data-visible="true"] {
+  animation: hold-pulse 620ms ease-in-out infinite alternate;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .secondary-button,
+  .export-button,
+  .start-button,
+  .enter-game-button {
     transition: opacity 140ms ease, transform 140ms ease, background-color 140ms ease,
       border-color 140ms ease, color 140ms ease;
-  }
-
-  .judgement[data-kind="hold"][data-visible="true"] {
-    animation: hold-pulse 620ms ease-in-out infinite alternate;
   }
 }
 
@@ -1569,77 +1505,6 @@ kbd {
   to {
     opacity: 1;
     transform: translate(-50%, 0) scale(1.04);
-  }
-}
-
-@keyframes hit-ring {
-  0% {
-    transform: translate(-50%, -50%) scale(0.25);
-    opacity: 0;
-  }
-  18% {
-    transform: translate(-50%, -50%) scale(0.82);
-    opacity: 1;
-  }
-  100% {
-    transform: translate(-50%, -50%) scale(2.35);
-    opacity: 0;
-  }
-}
-
-@keyframes hit-core {
-  0% {
-    transform: translate(-50%, -50%) scale(0.2);
-    opacity: 0;
-  }
-  28% {
-    transform: translate(-50%, -50%) scale(1.25);
-    opacity: 1;
-  }
-  100% {
-    transform: translate(-50%, -50%) scale(0.05);
-    opacity: 0;
-  }
-}
-
-@keyframes hit-cross {
-  0% {
-    transform: translate(-50%, -50%) scaleX(0.15);
-    opacity: 0;
-  }
-  30% {
-    transform: translate(-50%, -50%) scaleX(1);
-    opacity: 1;
-  }
-  100% {
-    transform: translate(-50%, -50%) scaleX(1.7);
-    opacity: 0;
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .hit-confirmation {
-    animation: hit-ring-reduced 180ms ease-out forwards;
-  }
-
-  .hit-confirmation::before,
-  .hit-confirmation::after {
-    animation: none;
-  }
-}
-
-@keyframes hit-ring-reduced {
-  0% {
-    transform: translate(-50%, -50%) scale(0.85);
-    opacity: 0;
-  }
-  45% {
-    transform: translate(-50%, -50%) scale(1);
-    opacity: 1;
-  }
-  100% {
-    transform: translate(-50%, -50%) scale(1.08);
-    opacity: 0;
   }
 }
 
@@ -1789,7 +1654,7 @@ body[data-view="game"] .countdown {
 
 body[data-view="game"] .judgement {
   z-index: 8;
-  top: 26%;
+  top: 32%;
   font-size: clamp(28px, 4vw, 62px);
   letter-spacing: 0.045em;
 }
@@ -1831,17 +1696,28 @@ body[data-view="game"] .lane-labels {
 
 body[data-view="game"] .lane-labels span {
   position: absolute;
-  top: calc(var(--hit-line-y, 89%) + 62px);
+  top: calc(var(--hit-line-y, 89%) + clamp(34px, 6.2vh, 62px));
   transform: translate(-50%, -50%);
   color: rgba(235, 250, 255, 0.68);
   font-size: clamp(10px, 0.9vw, 13px);
   text-shadow: 0 0 12px rgba(138, 216, 255, 0.62);
 }
 
-body[data-view="game"] .lane-labels span:nth-child(1) { left: var(--lane-0-x, 35.7%); }
-body[data-view="game"] .lane-labels span:nth-child(2) { left: var(--lane-1-x, 45.2%); }
-body[data-view="game"] .lane-labels span:nth-child(3) { left: var(--lane-2-x, 54.8%); }
-body[data-view="game"] .lane-labels span:nth-child(4) { left: var(--lane-3-x, 64.3%); }
+body[data-view="game"] .lane-labels span:nth-child(1) {
+  left: var(--lane-0-x, 35.7%);
+}
+
+body[data-view="game"] .lane-labels span:nth-child(2) {
+  left: var(--lane-1-x, 45.2%);
+}
+
+body[data-view="game"] .lane-labels span:nth-child(3) {
+  left: var(--lane-2-x, 54.8%);
+}
+
+body[data-view="game"] .lane-labels span:nth-child(4) {
+  left: var(--lane-3-x, 64.3%);
+}
 
 @media (max-width: 820px) {
   body[data-view="game"] .effect-combo {
@@ -1874,7 +1750,8 @@ body[data-view="game"] .lane-labels span:nth-child(4) { left: var(--lane-3-x, 64
     border-width: 1px 0 0;
     border-color: rgba(218, 242, 255, 0.12);
     color: rgba(235, 250, 255, 0.72);
-    background: linear-gradient(180deg, transparent, rgba(8, 13, 28, 0.16));
+    background: linear-gradient(180deg, transparent, rgba(8, 13, 28, 0.3));
+    touch-action: none;
   }
 
   body[data-view="game"] .touch-controls button + button {
@@ -1885,10 +1762,6 @@ body[data-view="game"] .lane-labels span:nth-child(4) { left: var(--lane-3-x, 64
     display: none;
   }
 
-  body[data-view="game"] .lane-labels {
-    display: none;
-  }
-
   body[data-view="game"] .touch-controls button[data-pressed="true"],
   body[data-view="game"] .touch-controls button[data-holding="true"] {
     color: #061018;
@@ -1896,11 +1769,14 @@ body[data-view="game"] .lane-labels span:nth-child(4) { left: var(--lane-3-x, 64
     opacity: 1;
     box-shadow: inset 0 -3px 0 rgba(255, 255, 255, 0.62), 0 0 24px var(--held-color);
   }
-}
 
-@media (prefers-reduced-motion: reduce) {
-  body[data-view="game"] .effect-combo {
-    transition: none;
+  body[data-view="game"] #gameCanvas {
+    touch-action: none;
+    user-select: none;
+  }
+
+  body[data-view="game"] .lane-labels {
+    display: none;
   }
 }
 
@@ -1944,10 +1820,21 @@ body[data-view="selection"] .selection-stage {
   background-size: cover;
 }
 
-body[data-view="selection"] .selection-stage::before {
+body[data-view="selection"] .launch-background-video {
   position: absolute;
   inset: 0;
   z-index: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
+  pointer-events: none;
+}
+
+body[data-view="selection"] .selection-stage::before {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
   width: auto;
   height: auto;
   border: 0;
@@ -1963,7 +1850,7 @@ body[data-view="selection"] .selection-stage::before {
 body[data-view="selection"] .selection-stage::after {
   position: absolute;
   inset: 0;
-  z-index: 0;
+  z-index: 1;
   width: auto;
   height: auto;
   border: 0;
@@ -1983,7 +1870,7 @@ body[data-view="selection"] .selection-stage::after {
   position: absolute;
   top: max(24px, env(safe-area-inset-top));
   right: max(28px, env(safe-area-inset-right));
-  z-index: 3;
+  z-index: 4;
   max-width: none;
   min-height: 30px;
   padding: 0 12px;
@@ -1996,12 +1883,25 @@ body[data-view="selection"] .selection-stage::after {
 
 .launch-content {
   position: relative;
-  z-index: 2;
+  z-index: 3;
   width: min(100%, 980px);
   display: flex;
   flex-direction: column;
   align-items: center;
   text-align: center;
+}
+
+.launch-controls {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+@media (min-width: 601px) {
+  body[data-view="selection"] .launch-controls {
+    transform: translateY(clamp(-132px, -7vh, -64px));
+  }
 }
 
 .launch-kicker,
@@ -2028,9 +1928,13 @@ body[data-view="selection"] .selection-stage::after {
   width: 100%;
   height: auto;
   object-fit: contain;
+  opacity: 0.96;
   filter:
-    drop-shadow(0 20px 34px rgba(0, 0, 18, 0.9))
-    drop-shadow(0 0 34px rgba(130, 156, 255, 0.24));
+    brightness(0.82)
+    saturate(0.72)
+    contrast(0.94)
+    drop-shadow(0 18px 30px rgba(0, 0, 18, 0.78))
+    drop-shadow(0 0 22px rgba(112, 126, 210, 0.12));
 }
 
 .launch-copy {

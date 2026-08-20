@@ -16,3 +16,7 @@ Thumbs.db
 
 # public/audio에 게임용 원본이 있으므로 루트의 중복 파일만 제외합니다.
 /시_분.mp3
+
+# 배경 영상 제작 원본과 중간 렌더는 로컬에만 보관합니다.
+/bg_mov.mp4
+/bg_mov_loop.mp4

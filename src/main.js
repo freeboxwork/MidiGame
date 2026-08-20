@@ -57,6 +57,25 @@ const ui = Object.fromEntries(
     "eventLog",
   ].map((id) => [id, document.getElementById(id)]),
 );
+const launchBackgroundVideo = document.querySelector(".launch-background-video");
+const GAME_MOTION_POLICY = "always";
+
+function shouldReduceGameMotion() {
+  return (
+    GAME_MOTION_POLICY === "system" &&
+    window.matchMedia("(prefers-reduced-motion: reduce)").matches
+  );
+}
+
+function playLaunchBackgroundVideo() {
+  if (!launchBackgroundVideo || ui.selectionView.hidden) return;
+  launchBackgroundVideo.muted = true;
+  launchBackgroundVideo.defaultMuted = true;
+  launchBackgroundVideo.setAttribute("muted", "");
+  launchBackgroundVideo.setAttribute("playsinline", "");
+  const playAttempt = launchBackgroundVideo.play();
+  playAttempt?.catch(() => {});
+}
 
 if (document.fonts) {
   Promise.all([
@@ -83,6 +102,35 @@ const judgementSpriteCrops = {
   miss: { x: 0.5, y: 0.6 },
 };
 let judgementSpriteSources = null;
+const judgementSpriteLabels = new Map();
+const judgementSpriteText = {
+  perfect: "Perfect!",
+  great: "Great",
+  good: "Good",
+  miss: "Miss",
+};
+
+function createJudgementSpriteLabel(label, sprite) {
+  const labelElement = document.createElement("span");
+  labelElement.className = "judgement-label";
+  labelElement.dataset.sprite = sprite;
+  const accessibleLabel = document.createElement("span");
+  accessibleLabel.className = "sr-only";
+  accessibleLabel.textContent = label;
+  const spriteSource = judgementSpriteSources?.[sprite];
+  const spriteImage = spriteSource?.color.cloneNode() ?? document.createElement("img");
+  spriteImage.className = "judgement-sprite-color";
+  if (!spriteSource) {
+    labelElement.dataset.atlas = "true";
+    spriteImage.src = judgementSpriteSheetUrl;
+  }
+  spriteImage.alt = "";
+  spriteImage.setAttribute("aria-hidden", "true");
+  const whiteFlash = spriteSource?.white.cloneNode() ?? spriteImage.cloneNode();
+  whiteFlash.className = "judgement-sprite-white-flash";
+  labelElement.append(accessibleLabel, spriteImage, whiteFlash);
+  return labelElement;
+}
 
 function canvasToPngBlob(canvas) {
   return new Promise((resolve) => canvas.toBlob(resolve, "image/png"));
@@ -117,13 +165,9 @@ function warmJudgementSpriteFilter(sources) {
   const warmup = document.createElement("div");
   warmup.className = "judgement-filter-warmup";
   warmup.setAttribute("aria-hidden", "true");
-  Object.entries(sources).forEach(([name, source]) => {
-    const label = document.createElement("span");
-    label.className = "judgement-label";
-    label.dataset.sprite = name;
-    const image = source.color.cloneNode();
-    image.className = "judgement-sprite-color";
-    label.append(image);
+  Object.keys(sources).forEach((name) => {
+    const label = createJudgementSpriteLabel(judgementSpriteText[name] ?? name, name);
+    judgementSpriteLabels.set(name, label);
     warmup.append(label);
   });
   document.body.append(warmup);
@@ -436,6 +480,7 @@ async function enterGame() {
     await judgementSpriteReady;
     await synth.playEnterCue();
     await playViewTransition(ui.selectionView, "view-fade-out", 260);
+    launchBackgroundVideo?.pause();
     ui.selectionView.hidden = true;
     ui.gameView.hidden = false;
     document.body.dataset.view = "game";
@@ -459,6 +504,7 @@ async function returnToSelection() {
     await playViewTransition(ui.gameView, "view-fade-out", 260);
     ui.gameView.hidden = true;
     ui.selectionView.hidden = false;
+    playLaunchBackgroundVideo();
     document.body.dataset.view = "selection";
     history.replaceState(null, "", "#selectionView");
     setTransport("ready", "채보 준비 완료");
@@ -578,35 +624,22 @@ function updateHoldState(lane, holding) {
 }
 
 function setJudgementContent(label, sprite = null) {
-  const labelElement = document.createElement("span");
-  labelElement.className = "judgement-label";
+  let labelElement;
   if (sprite) {
     ui.judgement.dataset.sprite = sprite;
-    labelElement.dataset.sprite = sprite;
-    const accessibleLabel = document.createElement("span");
-    accessibleLabel.className = "sr-only";
-    accessibleLabel.textContent = label;
-    const spriteSource = judgementSpriteSources?.[sprite];
-    const spriteImage = spriteSource?.color.cloneNode() ?? document.createElement("img");
-    spriteImage.className = "judgement-sprite-color";
-    if (!spriteSource) {
-      labelElement.dataset.atlas = "true";
-      spriteImage.src = judgementSpriteSheetUrl;
-    }
-    spriteImage.alt = "";
-    spriteImage.setAttribute("aria-hidden", "true");
-    const whiteFlash = spriteSource?.white.cloneNode() ?? spriteImage.cloneNode();
-    whiteFlash.className = "judgement-sprite-white-flash";
-    labelElement.append(accessibleLabel, spriteImage, whiteFlash);
+    labelElement = judgementSpriteLabels.get(sprite) ?? createJudgementSpriteLabel(label, sprite);
+    judgementSpriteLabels.set(sprite, labelElement);
   } else {
     delete ui.judgement.dataset.sprite;
+    labelElement = document.createElement("span");
+    labelElement.className = "judgement-label";
     labelElement.textContent = label;
   }
   ui.judgement.replaceChildren(labelElement);
 }
 
 function triggerMissFlash() {
-  const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  const reducedMotion = shouldReduceGameMotion();
   const duration = reducedMotion ? 280 : 560;
   ui.missFlash.getAnimations().forEach((animation) => animation.cancel());
   ui.missFlash.dataset.visible = "true";
@@ -670,7 +703,7 @@ function showFeedbackMeta(timing, combo) {
   ui.effectCombo.dataset.visible = content.length ? "true" : "false";
 
   if (!content.length) return;
-  const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  const reducedMotion = shouldReduceGameMotion();
   ui.effectCombo.getAnimations().forEach((animation) => animation.cancel());
   ui.effectCombo.animate(
     reducedMotion
@@ -685,7 +718,7 @@ function showFeedbackMeta(timing, combo) {
 }
 
 function animateJudgement(name) {
-  const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  const reducedMotion = shouldReduceGameMotion();
   const intensity = { PERFECT: 1, GREAT: 0.8, GOOD: 0.66, MISS: 0.76, HOLD: 0.58 }[name] ?? 0.7;
   const duration = name === "PERFECT" ? 560 : 470;
   const label = ui.judgement.querySelector(".judgement-label");
@@ -738,7 +771,7 @@ function animateJudgement(name) {
   );
 }
 
-function showJudgement(name, timing, stats, lane, screenPosition, details = {}) {
+function showJudgement(name, timing, stats, _lane, _screenPosition, details = {}) {
   if (name === "EMPTY") return;
   window.clearTimeout(judgementTimer);
 
@@ -767,28 +800,10 @@ function showJudgement(name, timing, stats, lane, screenPosition, details = {}) 
     showFeedbackMeta(timing, stats.combo);
   }
   animateJudgement(name);
-  triggerHitConfirmation(name, lane, screenPosition);
   judgementTimer = window.setTimeout(() => {
     ui.judgement.dataset.visible = "false";
   }, name === "PERFECT" ? 560 : 430);
   addLogItem(name, timing, details);
-}
-
-function triggerHitConfirmation(name, lane, screenPosition) {
-  if (!["PERFECT", "GREAT", "GOOD"].includes(name)) return;
-  const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-  const lanePositions = [17.5, 39.2, 60.8, 82.5];
-  const marker = document.createElement("span");
-  marker.className = "hit-confirmation";
-  marker.dataset.kind = name.toLowerCase();
-  marker.style.left = screenPosition ? `${screenPosition.x}px` : `${lanePositions[lane] ?? 50}%`;
-  marker.style.top = screenPosition ? `${screenPosition.y}px` : "calc(100% - 39px)";
-  marker.dataset.positionSource = screenPosition ? "projected-3d" : "fallback";
-  marker.setAttribute("aria-hidden", "true");
-  marker.innerHTML = "<i></i>";
-  ui.gameStage.append(marker);
-  window.setTimeout(() => marker.remove(), reducedMotion ? 220 : 620);
-
 }
 
 function addLogItem(name, timing, details = {}) {
@@ -909,5 +924,19 @@ document.querySelectorAll("[data-lane]").forEach((button) => {
   button.addEventListener("pointercancel", release);
 });
 
+const retryLaunchBackgroundVideo = () => {
+  if (document.body.dataset.view === "selection" && launchBackgroundVideo?.paused) {
+    playLaunchBackgroundVideo();
+  }
+};
+
+document.addEventListener("pointerdown", retryLaunchBackgroundVideo, { passive: true });
+document.addEventListener("touchstart", retryLaunchBackgroundVideo, { passive: true });
+document.addEventListener("visibilitychange", () => {
+  if (!document.hidden) retryLaunchBackgroundVideo();
+});
+window.addEventListener("pageshow", retryLaunchBackgroundVideo);
+
 document.body.dataset.view = "selection";
+playLaunchBackgroundVideo();
 loadDefaultTrack();

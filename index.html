@@ -105,6 +105,21 @@
         </aside>
 
         <section class="selection-stage" aria-labelledby="selectionTitle">
+          <video
+            class="launch-background-video"
+            autoplay
+            muted
+            loop
+            playsinline
+            preload="metadata"
+            poster="/images/neon-velocity-hero-v1.png"
+            aria-hidden="true"
+            tabindex="-1"
+            disablepictureinpicture
+          >
+            <source src="./bg_mov_loop_web.mp4" type="video/mp4" />
+          </video>
+
           <div class="launch-status transport-state" aria-live="polite">
             <span id="stateDot" class="state-dot"></span>
             <span id="stateText">음원 분석 중</span>
@@ -121,33 +136,35 @@
                 decoding="async"
               />
             </h1>
-            <p class="launch-copy">CHASE THE BEAT INTO THE VOID</p>
+            <div class="launch-controls">
+              <p class="launch-copy">CHASE THE BEAT INTO THE VOID</p>
 
-            <div class="launch-track" aria-label="선택된 곡과 난이도">
-              <strong id="selectionSongTitle">시 분</strong>
-              <span id="selectionTrackName">트랙 분석 중</span>
-              <div id="selectionDifficulty" class="difficulty-picker" role="group" aria-label="노트 밀도 선택">
-                <button type="button" data-difficulty="calm" aria-pressed="false">CALM</button>
-                <button type="button" data-difficulty="standard" aria-pressed="true">STANDARD</button>
-                <button type="button" data-difficulty="expert" aria-pressed="false">EXPERT</button>
+              <div class="launch-track" aria-label="선택된 곡과 난이도">
+                <strong id="selectionSongTitle">시 분</strong>
+                <span id="selectionTrackName">트랙 분석 중</span>
+                <div id="selectionDifficulty" class="difficulty-picker" role="group" aria-label="노트 밀도 선택">
+                  <button type="button" data-difficulty="calm" aria-pressed="false">CALM</button>
+                  <button type="button" data-difficulty="standard" aria-pressed="true">STANDARD</button>
+                  <button type="button" data-difficulty="expert" aria-pressed="false">EXPERT</button>
+                </div>
               </div>
+
+              <dl class="selection-summary" aria-label="생성된 채보 정보">
+                <div><dt>BPM</dt><dd id="selectionBpm">—</dd></div>
+                <div><dt>NOTES</dt><dd id="selectionNotes">—</dd></div>
+                <div><dt>LENGTH</dt><dd id="selectionLength">—</dd></div>
+                <div><dt>HOLDS</dt><dd id="selectionHoldCount">—</dd></div>
+              </dl>
+
+              <p id="selectionInstruction" class="launch-instruction">
+                D · F · J · K&nbsp;&nbsp;—&nbsp;&nbsp;판정선에 맞춰 리듬을 입력하세요
+              </p>
+
+              <button id="enterGameButton" class="enter-game-button" type="button" disabled>
+                <span>GAME START</span>
+                <small>PRESS ENTER</small>
+              </button>
             </div>
-
-            <dl class="selection-summary" aria-label="생성된 채보 정보">
-              <div><dt>BPM</dt><dd id="selectionBpm">—</dd></div>
-              <div><dt>NOTES</dt><dd id="selectionNotes">—</dd></div>
-              <div><dt>LENGTH</dt><dd id="selectionLength">—</dd></div>
-              <div><dt>HOLDS</dt><dd id="selectionHoldCount">—</dd></div>
-            </dl>
-
-            <p id="selectionInstruction" class="launch-instruction">
-              D · F · J · K&nbsp;&nbsp;—&nbsp;&nbsp;판정선에 맞춰 리듬을 입력하세요
-            </p>
-
-            <button id="enterGameButton" class="enter-game-button" type="button" disabled>
-              <span>GAME START</span>
-              <small>PRESS ENTER</small>
-            </button>
           </div>
         </section>
       </main>
