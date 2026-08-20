@@ -17,6 +17,10 @@ const TRACK_FRONT_Z = 4.8;
 const TRACK_CENTER_Z = TRACK_FRONT_Z - TRACK_LENGTH * 0.5;
 const TRACK_FADE_START_Z = -13.5;
 const TRACK_FADE_END_Z = -36;
+const HIT_Z = 2.25;
+const TRACK_WARP_START_Z = HIT_Z;
+const TRACK_WARP_FULL_Z = -14;
+const TRACK_WARP_SEGMENTS = 96;
 const SCENE_PALETTE = {
   surface: 0x03060d,
   surfaceRaised: 0x080d17,
@@ -41,7 +45,6 @@ const MIRROR_DEFAULTS = {
   pulse: 0xd69cff,
 };
 const KEY_TO_LANE = { KeyD: 0, KeyF: 1, KeyJ: 2, KeyK: 3 };
-const HIT_Z = 2.25;
 const SPAWN_Z = -19;
 const TRAVEL_SECONDS = 3.1;
 const COUNTDOWN_SECONDS = 3;
@@ -69,51 +72,133 @@ const JUDGEMENT_WINDOWS = [
   { name: "GOOD", seconds: GOOD_WINDOW, points: 350, accuracy: 0.45 },
 ];
 
-function applyTrackDepthFade(
-  material,
-  fadeStart = TRACK_FADE_START_Z,
-  fadeEnd = TRACK_FADE_END_Z,
-) {
-  material.transparent = true;
+const TRACK_WARP_GLSL = `
+  float getTrackWarpInfluence(float worldZ) {
+    float progress = clamp(
+      (${TRACK_WARP_START_Z.toFixed(2)} - worldZ) /
+        ${(TRACK_WARP_START_Z - TRACK_WARP_FULL_Z).toFixed(2)},
+      0.0,
+      1.0
+    );
+    return progress * progress * (3.0 - 2.0 * progress);
+  }
+
+  vec3 getTrackWarpOffset(vec3 worldPosition) {
+    float distanceFromAnchor = ${TRACK_WARP_START_Z.toFixed(2)} - worldPosition.z;
+    float influence = getTrackWarpInfluence(worldPosition.z);
+    float phase = distanceFromAnchor * 0.132 + uTrackWarpTime * 0.38;
+    float strength = uTrackWarpStrength * (1.0 + uTrackWarpPulse * 0.14);
+    float lateral = (
+      sin(phase) * 1.12 +
+      sin(distanceFromAnchor * 0.057 - uTrackWarpTime * 0.19 + 1.65) * 0.62
+    ) * influence * strength;
+    float lift = (
+      sin(distanceFromAnchor * 0.31 + uTrackWarpTime * 0.31 + 0.75) * 1.85 +
+      sin(distanceFromAnchor * 0.115 - uTrackWarpTime * 0.18 + 2.15) * 0.72
+    ) * influence * strength;
+    float bank = (
+      cos(phase) * 0.062 +
+      sin(distanceFromAnchor * 0.061 - uTrackWarpTime * 0.17 + 0.4) * 0.028
+    ) * influence * strength;
+    return vec3(lateral, lift + worldPosition.x * bank, 0.0);
+  }
+`;
+
+function createTrackWarpUniforms() {
+  return {
+    uTrackWarpTime: { value: 0 },
+    uTrackWarpStrength: { value: 0.92 },
+    uTrackWarpPulse: { value: 0 },
+  };
+}
+
+function applyTrackWarp(material, warpUniforms, options = {}) {
+  const fadeStart = options.fadeStart;
+  const fadeEnd = options.fadeEnd;
+  const usesDepthFade = Number.isFinite(fadeStart) && Number.isFinite(fadeEnd);
+  if (usesDepthFade) material.transparent = true;
+
   material.onBeforeCompile = (shader) => {
+    Object.assign(shader.uniforms, warpUniforms);
+    const varyingDeclaration = usesDepthFade ? "varying float vTrackWorldZ;" : "";
     shader.vertexShader = shader.vertexShader
       .replace(
-        "void main() {",
-        "varying float vTrackWorldZ;\nvoid main() {",
+        "#include <common>",
+        `#include <common>
+         uniform float uTrackWarpTime;
+         uniform float uTrackWarpStrength;
+         uniform float uTrackWarpPulse;
+         ${varyingDeclaration}
+         ${TRACK_WARP_GLSL}`,
       )
       .replace(
         "#include <begin_vertex>",
-        "#include <begin_vertex>\nvTrackWorldZ = (modelMatrix * vec4(transformed, 1.0)).z;",
+        `#include <begin_vertex>
+         vec4 trackWarpWorldPosition = modelMatrix * vec4(transformed, 1.0);
+         vec3 trackWarpOffset = getTrackWarpOffset(trackWarpWorldPosition.xyz);
+         transformed.x += trackWarpOffset.x;
+         transformed.y += trackWarpOffset.y;
+         ${usesDepthFade ? "vTrackWorldZ = trackWarpWorldPosition.z;" : ""}`,
       );
-    shader.fragmentShader = shader.fragmentShader
-      .replace(
-        "void main() {",
-        "varying float vTrackWorldZ;\nvoid main() {",
-      )
-      .replace(
-        "#include <opaque_fragment>",
-        `diffuseColor.a *= smoothstep(${fadeEnd.toFixed(1)}, ${fadeStart.toFixed(1)}, vTrackWorldZ);
-         if (diffuseColor.a < 0.004) discard;
-         #include <opaque_fragment>`,
-      );
+
+    if (usesDepthFade) {
+      shader.fragmentShader = shader.fragmentShader
+        .replace(
+          "void main() {",
+          "varying float vTrackWorldZ;\nvoid main() {",
+        )
+        .replace(
+          "#include <opaque_fragment>",
+          `diffuseColor.a *= smoothstep(${fadeEnd.toFixed(1)}, ${fadeStart.toFixed(1)}, vTrackWorldZ);
+           if (diffuseColor.a < 0.004) discard;
+           #include <opaque_fragment>`,
+        );
+    }
   };
-  material.customProgramCacheKey = () => `track-depth-fade-${fadeStart}-${fadeEnd}`;
+  material.customProgramCacheKey = () =>
+    `track-warp-v2-${usesDepthFade ? `${fadeStart}-${fadeEnd}` : "solid"}`;
   return material;
 }
 
-function createSoftNoteGlowMaterial(color, intensity = 1) {
+function applyTrackDepthFade(
+  material,
+  warpUniforms,
+  fadeStart = TRACK_FADE_START_Z,
+  fadeEnd = TRACK_FADE_END_Z,
+) {
+  return applyTrackWarp(material, warpUniforms, { fadeStart, fadeEnd });
+}
+
+function createSoftNoteGlowMaterial(color, intensity = 1, warpUniforms = null) {
+  const uniforms = {
+    uColor: { value: new THREE.Color(color).lerp(new THREE.Color(0xffffff), 0.28) },
+    uIntensity: { value: intensity },
+  };
+  if (warpUniforms) Object.assign(uniforms, warpUniforms);
+
   return new THREE.ShaderMaterial({
-    uniforms: {
-      uColor: { value: new THREE.Color(color).lerp(new THREE.Color(0xffffff), 0.28) },
-      uIntensity: { value: intensity },
-    },
-    vertexShader: `
-      varying vec2 vGlowUv;
-      void main() {
-        vGlowUv = uv;
-        gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
-      }
-    `,
+    uniforms,
+    vertexShader: warpUniforms
+      ? `
+        uniform float uTrackWarpTime;
+        uniform float uTrackWarpStrength;
+        uniform float uTrackWarpPulse;
+        varying vec2 vGlowUv;
+        ${TRACK_WARP_GLSL}
+        void main() {
+          vGlowUv = uv;
+          vec4 worldPosition = modelMatrix * vec4(position, 1.0);
+          worldPosition.xyz += getTrackWarpOffset(worldPosition.xyz);
+          gl_Position = projectionMatrix * viewMatrix * worldPosition;
+        }
+      `
+      : `
+        varying vec2 vGlowUv;
+        void main() {
+          vGlowUv = uv;
+          gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+        }
+      `,
     fragmentShader: `
       uniform vec3 uColor;
       uniform float uIntensity;
@@ -178,6 +263,8 @@ export class RhythmGame {
     this.activePointerLanes = new Map();
     this.reducedMotion = false;
     this.canvas.dataset.gameMotionPolicy = "always";
+    this.trackWarpUniforms = createTrackWarpUniforms();
+    this.canvas.dataset.trackWarp = "dynamic";
     this.stats = this.createStats();
     this.lastUiUpdate = 0;
 
@@ -274,14 +361,24 @@ export class RhythmGame {
         clearcoatRoughness: 0.3,
         opacity: 0.94,
       }),
+      this.trackWarpUniforms,
     );
-    const floor = new THREE.Mesh(new THREE.PlaneGeometry(5.96, TRACK_LENGTH), floorMaterial);
-    floor.rotation.x = -Math.PI / 2;
+    const floorGeometry = new THREE.PlaneGeometry(5.96, TRACK_LENGTH, 8, TRACK_WARP_SEGMENTS);
+    floorGeometry.rotateX(-Math.PI / 2);
+    const floor = new THREE.Mesh(floorGeometry, floorMaterial);
     floor.position.set(0, -0.08, TRACK_CENTER_Z);
     floor.receiveShadow = true;
+    floor.frustumCulled = false;
     this.scene.add(floor);
 
-    const laneBedGeometry = new THREE.BoxGeometry(LANE_SPACING, 0.045, TRACK_LENGTH);
+    const laneBedGeometry = new THREE.BoxGeometry(
+      LANE_SPACING,
+      0.045,
+      TRACK_LENGTH,
+      1,
+      1,
+      TRACK_WARP_SEGMENTS,
+    );
     for (let lane = 0; lane < 4; lane += 1) {
       const laneColor = new THREE.Color(LANE_COLORS[lane]);
       const laneBed = new THREE.Mesh(
@@ -297,10 +394,12 @@ export class RhythmGame {
             clearcoatRoughness: 0.3,
             opacity: 0.9,
           }),
+          this.trackWarpUniforms,
         ),
       );
       laneBed.position.set(LANE_X[lane], -0.045, TRACK_CENTER_Z - 0.05);
       laneBed.receiveShadow = true;
+      laneBed.frustumCulled = false;
       this.scene.add(laneBed);
     }
 
@@ -313,12 +412,21 @@ export class RhythmGame {
         roughness: 0.24,
         opacity: 0.7,
       }),
+      this.trackWarpUniforms,
     );
-    const wallGeometry = new RoundedBoxGeometry(0.27, 0.22, TRACK_LENGTH, 4, 0.08);
+    const wallGeometry = new THREE.BoxGeometry(
+      0.27,
+      0.22,
+      TRACK_LENGTH,
+      2,
+      2,
+      TRACK_WARP_SEGMENTS,
+    );
     for (const side of [-1, 1]) {
       const wall = new THREE.Mesh(wallGeometry, wallMaterial);
       wall.position.set(side * 2.84, 0.015, TRACK_CENTER_Z - 0.05);
       wall.receiveShadow = true;
+      wall.frustumCulled = false;
       this.scene.add(wall);
     }
 
@@ -326,7 +434,7 @@ export class RhythmGame {
       if (index === 2) continue;
       const color = TRACK_EDGE_COLORS[index];
       const glowRail = new THREE.Mesh(
-        new THREE.BoxGeometry(0.052, 0.008, TRACK_LENGTH),
+        new THREE.BoxGeometry(0.052, 0.008, TRACK_LENGTH, 1, 1, TRACK_WARP_SEGMENTS),
         applyTrackDepthFade(
           new THREE.MeshBasicMaterial({
             color,
@@ -336,65 +444,72 @@ export class RhythmGame {
             blending: THREE.AdditiveBlending,
             toneMapped: false,
           }),
+          this.trackWarpUniforms,
         ),
       );
       glowRail.position.set(TRACK_LEFT_X + index * LANE_SPACING, 0.026, TRACK_CENTER_Z - 0.1);
+      glowRail.frustumCulled = false;
       const rail = new THREE.Mesh(
-        new THREE.BoxGeometry(0.013, 0.018, TRACK_LENGTH),
+        new THREE.BoxGeometry(0.013, 0.018, TRACK_LENGTH, 1, 1, TRACK_WARP_SEGMENTS),
         applyTrackDepthFade(
           new THREE.MeshBasicMaterial({
             color,
             opacity: 0.62,
             toneMapped: false,
           }),
+          this.trackWarpUniforms,
         ),
       );
       rail.position.set(TRACK_LEFT_X + index * LANE_SPACING, 0.036, TRACK_CENTER_Z - 0.1);
+      rail.frustumCulled = false;
       this.scene.add(glowRail, rail);
     }
 
     const centerRailGeometry = new THREE.BufferGeometry();
+    const centerRailPositions = [];
+    const centerRailSides = [];
+    const centerRailIndices = [];
+    for (let segment = 0; segment <= TRACK_WARP_SEGMENTS; segment += 1) {
+      const progress = segment / TRACK_WARP_SEGMENTS;
+      const z = THREE.MathUtils.lerp(TRACK_FRONT_Z - 0.05, TRACK_FADE_END_Z - 2, progress);
+      centerRailPositions.push(0, -0.02, z, 0, -0.02, z);
+      centerRailSides.push(-1, 1);
+      if (segment < TRACK_WARP_SEGMENTS) {
+        const start = segment * 2;
+        centerRailIndices.push(start, start + 1, start + 2, start + 2, start + 1, start + 3);
+      }
+    }
     centerRailGeometry.setAttribute(
       "position",
-      new THREE.Float32BufferAttribute(
-        [
-          0,
-          -0.02,
-          TRACK_FRONT_Z - 0.05,
-          0,
-          -0.02,
-          TRACK_FRONT_Z - 0.05,
-          0,
-          -0.02,
-          TRACK_FADE_END_Z - 2,
-          0,
-          -0.02,
-          TRACK_FADE_END_Z - 2,
-        ],
-        3,
-      ),
+      new THREE.Float32BufferAttribute(centerRailPositions, 3),
     );
     centerRailGeometry.setAttribute(
       "aSide",
-      new THREE.Float32BufferAttribute([-1, 1, -1, 1], 1),
+      new THREE.Float32BufferAttribute(centerRailSides, 1),
     );
-    centerRailGeometry.setIndex([0, 1, 2, 2, 1, 3]);
+    centerRailGeometry.setIndex(centerRailIndices);
     this.centerRailMaterial = new THREE.ShaderMaterial({
       uniforms: {
         uColor: { value: new THREE.Color(0xb54bd8) },
         uViewportWidth: { value: Math.max(1, this.container.clientWidth) },
         uHalfWidthCss: { value: 0.72 },
+        ...this.trackWarpUniforms,
       },
       vertexShader: `
         attribute float aSide;
         uniform float uViewportWidth;
         uniform float uHalfWidthCss;
+        uniform float uTrackWarpTime;
+        uniform float uTrackWarpStrength;
+        uniform float uTrackWarpPulse;
         varying float vWorldZ;
+        ${TRACK_WARP_GLSL}
         void main() {
           vec4 worldPosition = modelMatrix * vec4(position, 1.0);
+          vWorldZ = worldPosition.z;
+          worldPosition.xyz += getTrackWarpOffset(worldPosition.xyz);
           vec4 clipPosition = projectionMatrix * viewMatrix * worldPosition;
           clipPosition.x += aSide * uHalfWidthCss * 2.0 * clipPosition.w / uViewportWidth;
-          vWorldZ = worldPosition.z;
           gl_Position = clipPosition;
         }
       `,
@@ -418,6 +533,7 @@ export class RhythmGame {
 
     const crossMaterial = applyTrackDepthFade(
       new THREE.MeshBasicMaterial({ color: 0x35506f, opacity: 0.38 }),
+      this.trackWarpUniforms,
     );
     const crossCount = Math.ceil((HIT_Z - TRACK_FADE_END_Z) / 1.5);
     for (let index = 0; index < crossCount; index += 1) {
@@ -490,36 +606,45 @@ export class RhythmGame {
       this.scene.add(receptor);
     }
 
-    this.noteGeometry = new RoundedBoxGeometry(0.86, 0.12, 0.5, 5, 0.034);
-    this.noteGlowGeometry = new THREE.PlaneGeometry(1.12, 0.62);
+    this.noteGeometry = new RoundedBoxGeometry(0.86, 0.12, NOTE_BASE_DEPTH, 5, 0.034);
+    this.holdNoteGeometry = new THREE.BoxGeometry(0.82, 0.1, NOTE_BASE_DEPTH, 2, 1, 28);
+    this.noteGlowGeometry = new THREE.PlaneGeometry(1.12, 0.62, 2, 28);
     this.hitRingGeometry = new THREE.RingGeometry(0.19, 0.27, 30);
     this.hitShardGeometry = new THREE.BoxGeometry(0.055, 0.055, 0.24);
     this.noteMaterials = LANE_COLORS.map(
       (color) => {
         const surfaceColor = new THREE.Color(color).lerp(new THREE.Color(0xffffff), 0.14);
-        return new THREE.MeshPhysicalMaterial({
-          color: surfaceColor,
-          emissive: color,
-          emissiveIntensity: 0.46,
-          metalness: 0.14,
-          roughness: 0.2,
-          clearcoat: 1,
-          clearcoatRoughness: 0.07,
-        });
+        return applyTrackWarp(
+          new THREE.MeshPhysicalMaterial({
+            color: surfaceColor,
+            emissive: color,
+            emissiveIntensity: 0.46,
+            metalness: 0.14,
+            roughness: 0.2,
+            clearcoat: 1,
+            clearcoatRoughness: 0.07,
+          }),
+          this.trackWarpUniforms,
+        );
       },
     );
-    this.noteGlowMaterials = LANE_COLORS.map((color) => createSoftNoteGlowMaterial(color, 0.72));
+    this.noteGlowMaterials = LANE_COLORS.map((color) =>
+      createSoftNoteGlowMaterial(color, 0.72, this.trackWarpUniforms),
+    );
     this.holdMaterials = LANE_COLORS.map((color) => {
       const heldColor = new THREE.Color(color).lerp(new THREE.Color(0xffffff), 0.34);
-      return new THREE.MeshPhysicalMaterial({
-        color: heldColor.lerp(new THREE.Color(0xffffff), 0.16),
-        emissive: color,
-        emissiveIntensity: 0.72,
-        metalness: 0.12,
-        roughness: 0.14,
-        clearcoat: 1,
-        clearcoatRoughness: 0.08,
-      });
+      return applyTrackWarp(
+        new THREE.MeshPhysicalMaterial({
+          color: heldColor.lerp(new THREE.Color(0xffffff), 0.16),
+          emissive: color,
+          emissiveIntensity: 0.72,
+          metalness: 0.12,
+          roughness: 0.14,
+          clearcoat: 1,
+          clearcoatRoughness: 0.08,
+        }),
+        this.trackWarpUniforms,
+      );
     });
     this.createHitEffectPool();
     this.setupPostProcessing();
@@ -966,6 +1091,25 @@ export class RhythmGame {
     }
   }
 
+  updateTrackWarp(elapsed) {
+    const liveEnergy =
+      this.state === "playing"
+        ? THREE.MathUtils.clamp(
+            this.smoothedAudioEnergy.overall * 0.72 + this.smoothedAudioEnergy.bass * 0.34,
+            0,
+            1,
+          )
+        : 0;
+    const motionScale = this.reducedMotion ? 0.14 : 1;
+    const strength = this.reducedMotion ? 0.28 : 0.92 + liveEnergy * 0.16;
+    const pulse = this.reducedMotion ? 0 : liveEnergy;
+    this.trackWarpUniforms.uTrackWarpTime.value = elapsed * motionScale;
+    this.trackWarpUniforms.uTrackWarpStrength.value = strength;
+    this.trackWarpUniforms.uTrackWarpPulse.value = pulse;
+    this.canvas.dataset.trackWarpStrength = strength.toFixed(2);
+    this.canvas.dataset.trackWarpPulse = pulse.toFixed(2);
+  }
+
   setChart(chart) {
     this.stop(false);
     this.runtimeNotes = chart.notes.map((note) => ({
@@ -1047,7 +1191,7 @@ export class RhythmGame {
     glow.renderOrder = 2;
     mesh.add(glow);
     mesh.visible = false;
-    mesh.rotation.x = -0.025;
+    mesh.frustumCulled = false;
     mesh.userData.glow = glow;
     this.scene.add(mesh);
     this.noteMeshPool.push(mesh);
@@ -1059,6 +1203,7 @@ export class RhythmGame {
     if (runtime.mesh) return runtime.mesh;
     const mesh = this.freeNoteMeshes.pop() ?? this.createPooledNoteMesh();
     const { note, isHold } = runtime;
+    mesh.geometry = isHold ? this.holdNoteGeometry : this.noteGeometry;
     mesh.material = this.noteMaterials[note.lane];
     mesh.userData.glow.material = this.noteGlowMaterials[note.lane];
     mesh.position.set(LANE_X[note.lane], 0.1, SPAWN_Z);
@@ -1079,6 +1224,7 @@ export class RhythmGame {
     const mesh = runtime.mesh;
     if (!mesh) return;
     mesh.visible = false;
+    mesh.geometry = this.noteGeometry;
     mesh.material = this.noteMaterials[runtime.note.lane];
     runtime.mesh = null;
     this.freeNoteMeshes.push(mesh);
@@ -1541,6 +1687,7 @@ export class RhythmGame {
 
     this.updateHitEffects(delta);
     this.updateCosmicEnvironment(delta, elapsed);
+    this.updateTrackWarp(elapsed);
 
     for (let lane = 0; lane < 4; lane += 1) {
       this.pulse[lane] = Math.max(0, this.pulse[lane] - delta * 5.5);
